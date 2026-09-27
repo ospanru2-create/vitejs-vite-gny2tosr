@@ -1,0 +1,12 @@
+@import 'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css';
+
+/* Фикс для темных блоков */
+.bg-slate-900 {
+  background-color: #0f172a !important;
+}
+.text-slate-400 {
+  color: #94a3b8 !important;
+}
+.text-slate-300 {
+  color: #cbd5e1 !important;
+}
