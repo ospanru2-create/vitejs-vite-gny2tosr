@@ -1,179 +1,147 @@
 import React, { useState } from 'react';
-import { supabase } from './supabase';
+import { supabase } from './supabaseClient';
 
 interface CreateOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onOrderCreated: () => void;
+  onOrderCreated?: () => void;
 }
 
-export const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
-  isOpen,
-  onClose,
-  onOrderCreated,
-}) => {
+export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: CreateOrderModalProps) {
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('Ремонт и отделка');
-  const [price, setPrice] = useState('');
-  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('Ремонт');
+  const [budget, setBudget] = useState('');
   const [phone, setPhone] = useState('');
+  const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !price) {
-      alert('Пожалуйста, заполните заголовок и цену');
-      return;
-    }
-
     setLoading(true);
 
-    // Получаем текущего авторизованного пользователя
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    const formattedPrice = price.includes('₸') ? price : `${price} ₸`;
-
-    const newOrder = {
-      title,
-      category,
-      price: formattedPrice,
-      description,
-      phone,
-      user_id: user?.id || null,
-    };
-
-    try {
-      const { error } = await supabase.from('orders').insert([newOrder]);
-      if (error) {
-        console.warn('Ошибка базы данных Supabase:', error.message);
-        // Резервное сохранение в локальный список
-        const savedOrders = JSON.parse(
-          localStorage.getItem('local_orders') || '[]'
-        );
-        localStorage.setItem(
-          'local_orders',
-          JSON.stringify([
-            {
-              ...newOrder,
-              id: String(Date.now()),
-              created_at: new Date().toISOString(),
-            },
-            ...savedOrders,
-          ])
-        );
+    const { error } = await supabase.from('orders').insert([
+      {
+        title,
+        category,
+        budget: budget ? parseFloat(budget) : null,
+        phone,
+        description,
+        status: 'active'
       }
-    } catch (err) {
-      console.warn('Ошибка сети, сохранено локально:', err);
-    }
+    ]);
 
     setLoading(false);
-    onOrderCreated();
-    onClose();
 
-    setTitle('');
-    setPrice('');
-    setDescription('');
-    setPhone('');
+    if (error) {
+      alert('Ошибка при создании заказа: ' + error.message);
+    } else {
+      alert('Заказ успешно создан и сохранен в базе!');
+      setTitle('');
+      setBudget('');
+      setPhone('');
+      setDescription('');
+      if (onOrderCreated) onOrderCreated();
+      onClose();
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl max-w-md w-full p-6 relative shadow-xl">
-        <button
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl relative">
+        <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold text-xl"
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold"
         >
           ✕
         </button>
 
-        <h2 className="text-xl font-bold mb-4 text-slate-900">Новый заказ</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">Создать заказ</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Название услуги *
-            </label>
-            <input
-              type="text"
+            <label className="block text-sm font-medium text-gray-700 mb-1">Что нужно сделать?</label>
+            <input 
+              type="text" 
               required
-              placeholder="Например: Установка смесителя"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Например: Установка кондиционера" 
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Категория *
-            </label>
-            <select
+            <label className="block text-sm font-medium text-gray-700 mb-1">Категория</label>
+            <select 
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
             >
-              <option value="Ремонт и отделка">Ремонт и отделка</option>
+              <option value="Ремонт">Ремонт</option>
+              <option value="Клининг">Клининг</option>
+              <option value="Перевозки">Грузоперевозки</option>
               <option value="Сантехника">Сантехника</option>
               <option value="Электрика">Электрика</option>
-              <option value="Уборка">Уборка</option>
-              <option value="Грузоперевозки">Грузоперевозки</option>
-              <option value="Бытовой ремонт">Бытовой ремонт</option>
+              <option value="Красота">Услуги красоты</option>
             </select>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Бюджет (₸) *
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="15000"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Бюджет (₸)</label>
+              <input 
+                type="number" 
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+                placeholder="15000" 
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Телефон</label>
+              <input 
+                type="tel" 
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+7 (707) 123-45-67" 
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Телефон для связи
-            </label>
-            <input
-              type="tel"
-              placeholder="+7 (707) 000-00-00"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Детали заказа
-            </label>
-            <textarea
+            <label className="block text-sm font-medium text-gray-700 mb-1">Подробное описание</label>
+            <textarea 
               rows={3}
-              placeholder="Опишите подробности задачи..."
+              required
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+              placeholder="Опишите детали заказа..." 
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            ></textarea>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg text-sm transition shadow-md active:scale-95"
-          >
-            {loading ? 'Публикация...' : 'Опубликовать заказ'}
-          </button>
+          <div className="flex justify-end gap-3 pt-4">
+            <button 
+              type="button" 
+              onClick={onClose}
+              className="px-5 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl transition"
+            >
+              Отмена
+            </button>
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition font-medium shadow-md shadow-blue-200 disabled:opacity-50"
+            >
+              {loading ? 'Публикация...' : 'Опубликовать заказ'}
+            </button>
+          </div>
         </form>
       </div>
     </div>
   );
-};
+}

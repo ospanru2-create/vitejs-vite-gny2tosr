@@ -1,239 +1,156 @@
-import { useState, useEffect } from 'react';
-import { CreateOrderModal } from './CreateOrderModal';
-import { OrderDetailsModal } from './OrderDetailsModal';
-import { MyOrdersModal } from './MyOrdersModal';
-import { AuthModal } from './AuthModal';
-import { supabase } from './supabase';
-
-interface Order {
-  id: string;
-  title: string;
-  category: string;
-  price: string;
-  description?: string;
-  phone?: string;
-  status?: string;
-  created_at: string;
-}
+import React, { useState, useEffect } from 'react';
+import { supabase } from './supabaseClient';
+import CreateOrderModal from './CreateOrderModal';
+import OrderDetailsModal from './OrderDetailsModal';
+import MyOrdersModal from './MyOrdersModal';
+import AuthModal from './AuthModal';
 
 export default function App() {
-  const [role, setRole] = useState<'client' | 'master'>('client');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isMyOrdersOpen, setIsMyOrdersOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
-
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  
+  const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string>('Все');
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const categories = ['Все', 'Ремонт', 'Клининг', 'Перевозки', 'Сантехника', 'Электрика', 'Красота'];
 
   const fetchOrders = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .order('created_at', { ascending: false });
+    let query = supabase.from('orders').select('*').order('created_at', { ascending: false });
 
-    if (!error && data) {
-      setOrders(data);
+    if (selectedCategory !== 'Все') {
+      query = query.eq('category', selectedCategory);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('Ошибка получения заказов:', error);
+    } else {
+      setOrders(data || []);
     }
     setLoading(false);
   };
 
   useEffect(() => {
     fetchOrders();
-  }, []);
-
-  const categories = [
-    { id: 'remont', name: 'Ремонт и отделка', icon: '🔨' },
-    { id: 'plumbing', name: 'Сантехника', icon: '🚰' },
-    { id: 'electric', name: 'Электрика', icon: '⚡' },
-    { id: 'cleaning', name: 'Уборка и клининг', icon: '🧹' },
-    { id: 'auto', name: 'Автоуслуги', icon: '🚗' },
-    { id: 'appliance', name: 'Ремонт техники', icon: '💻' },
-  ];
-
-  const filteredOrders = orders.filter((order) => {
-    const matchesCategory = !selectedCategory || order.category === selectedCategory;
-    const matchesSearch =
-      order.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (order.description && order.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesCategory && matchesSearch;
-  });
+  }, [selectedCategory]);
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setSelectedCategory(null)}>
-              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-md shadow-blue-200">
-                U
-              </div>
-              <span className="text-xl font-bold tracking-tight">Uslugi.kz</span>
-            </div>
-            
-            <div className="hidden md:flex bg-slate-100 p-1 rounded-xl text-xs font-semibold">
-              <button
-                onClick={() => setRole('client')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  role === 'client' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'
-                }`}
-              >
-                Заказчик
-              </button>
-              <button
-                onClick={() => setRole('master')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  role === 'master' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'
-                }`}
-              >
-                Мастер
-              </button>
-            </div>
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+      {/* Шапка */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-black text-blue-600 tracking-tight cursor-pointer" onClick={() => setSelectedCategory('Все')}>
+              uslugikz<span className="text-gray-400 font-normal">.asia</span>
+            </h1>
           </div>
 
           <div className="flex items-center gap-3">
-            {role === 'client' && (
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md shadow-blue-100 active:scale-95"
-              >
-                Создать заказ
-              </button>
-            )}
-
-            {user ? (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setIsMyOrdersOpen(true)}
-                  className="px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition-all"
-                >
-                  Мои заказы
-                </button>
-                <button
-                  onClick={() => supabase.auth.signOut()}
-                  className="px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                >
-                  Выйти
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setIsAuthOpen(true)}
-                className="px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition-all"
-              >
-                Войти
-              </button>
-            )}
+            <button 
+              onClick={() => setIsMyOrdersOpen(true)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition"
+            >
+              Мои заказы
+            </button>
+            <button 
+              onClick={() => setIsAuthOpen(true)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition"
+            >
+              Войти
+            </button>
+            <button 
+              onClick={() => setIsCreateModalOpen(true)}
+              className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition shadow-sm shadow-blue-200"
+            >
+              + Создать заказ
+            </button>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-b from-blue-900 to-slate-900 text-white py-16 px-4 relative overflow-hidden">
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <span className="inline-block px-3 py-1 bg-blue-500/20 text-blue-300 text-xs font-semibold rounded-full mb-4 border border-blue-400/20">
-            100% Бесплатно — без комиссий
-          </span>
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4 leading-tight">
-            Найдите проверенного мастера <br className="hidden sm:inline" /> за пару минут
-          </h1>
-          <p className="text-slate-300 text-sm sm:text-base mb-8 max-w-2xl mx-auto">
-            Сантехники, электрики, строители и клининг по всему Казахстану. Публикуйте заявку и выбирайте лучших!
+      {/* Основной контент */}
+      <main className="max-w-6xl mx-auto px-4 py-8">
+        {/* Баннер */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-8 text-white mb-8 shadow-lg">
+          <h2 className="text-3xl font-extrabold mb-2">Платформа поиска исполнителей и заказов</h2>
+          <p className="text-blue-100 mb-6 max-w-xl">
+            Публикуйте заказы или находите клиентов по всей Республике Казахстан быстро и без посредников.
           </p>
-
-          <div className="bg-white p-2 rounded-2xl shadow-2xl flex flex-col sm:flex-row gap-2 max-w-2xl mx-auto">
-            <input
-              type="text"
-              placeholder="Какая услуга вам нужна?"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 px-4 py-3 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none text-sm"
-            />
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold text-sm transition-all">
-              Найти
-            </button>
-          </div>
+          <button 
+            onClick={() => setIsCreateModalOpen(true)}
+            className="px-6 py-3 bg-white text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition shadow-md"
+          >
+            Разместить задание
+          </button>
         </div>
-      </section>
 
-      {/* Categories */}
-      <main className="max-w-7xl mx-auto px-4 py-12">
-        <h2 className="text-xl font-bold mb-6 text-slate-800">Популярные категории</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-12">
+        {/* Категории */}
+        <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none">
           {categories.map((cat) => (
             <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
-              className={`p-4 rounded-2xl border text-left transition-all ${
-                selectedCategory === cat.id
-                  ? 'border-blue-600 bg-blue-50/50 ring-2 ring-blue-600/20'
-                  : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition ${
+                selectedCategory === cat 
+                  ? 'bg-blue-600 text-white shadow-sm' 
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
               }`}
             >
-              <span className="text-2xl mb-2 block">{cat.icon}</span>
-              <span className="text-sm font-semibold text-slate-800 block">{cat.name}</span>
+              {cat}
             </button>
           ))}
         </div>
 
-        {/* Orders Feed */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-slate-800">
-            {selectedCategory
-              ? `Заказы в категории: ${categories.find((c) => c.id === selectedCategory)?.name}`
-              : 'Актуальные заказы'}
-          </h2>
-          <span className="text-sm text-slate-500 font-medium">Найдено: {filteredOrders.length}</span>
+        {/* Лента заказов */}
+        <div className="mb-4 flex justify-between items-center">
+          <h3 className="text-xl font-bold text-gray-800">
+            {selectedCategory === 'Все' ? 'Все актуальные заказы' : `Заказы в категории: ${selectedCategory}`}
+          </h3>
+          <span className="text-sm text-gray-500">Всего: {orders.length}</span>
         </div>
 
         {loading ? (
-          <div className="text-center py-12 text-slate-500 font-medium">Загрузка заказов...</div>
-        ) : filteredOrders.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-            <p className="text-slate-500 font-medium">Заказов пока нет. Будьте первыми, кто создаст заказ!</p>
+          <div className="text-center py-12 text-gray-500">Загрузка заказов из базы...</div>
+        ) : orders.length === 0 ? (
+          <div className="bg-white rounded-2xl p-12 text-center border border-gray-200">
+            <p className="text-gray-500 mb-4">В этой категории пока нет опубликованных заказов.</p>
+            <button 
+              onClick={() => setIsCreateModalOpen(true)}
+              className="px-4 py-2 bg-blue-50 text-blue-600 font-medium rounded-xl hover:bg-blue-100 transition"
+            >
+              Будьте первым — создайте заказ
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredOrders.map((order) => (
-              <div
-                key={order.id}
+            {orders.map((order) => (
+              <div 
+                key={order.id} 
                 onClick={() => setSelectedOrder(order)}
-                className="bg-white p-5 rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
+                className="bg-white border border-gray-200 rounded-2xl p-5 hover:shadow-md transition cursor-pointer flex flex-col justify-between"
               >
                 <div>
-                  <div className="flex justify-between items-start gap-2 mb-2">
-                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="px-2.5 py-1 bg-blue-50 text-blue-600 text-xs font-semibold rounded-lg">
                       {order.category}
                     </span>
-                    <span className="text-xs text-slate-400">
-                      {new Date(order.created_at).toLocaleDateString()}
+                    <span className="text-xs text-gray-400">
+                      {new Date(order.created_at).toLocaleDateString('ru-RU')}
                     </span>
                   </div>
-                  <h3 className="font-bold text-slate-900 text-lg mb-2 line-clamp-1">{order.title}</h3>
-                  <p className="text-slate-600 text-sm line-clamp-2 mb-4">
-                    {order.description || 'Без описания'}
-                  </p>
+                  <h4 className="font-bold text-gray-900 text-lg mb-2 line-clamp-1">{order.title}</h4>
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{order.description}</p>
                 </div>
-                <div className="flex justify-between items-center pt-3 border-t border-slate-100 mt-2">
-                  <span className="font-extrabold text-slate-900 text-lg">{order.price} ₸</span>
-                  <span className="text-xs font-semibold text-blue-600 hover:underline">Подробнее →</span>
+
+                <div className="pt-3 border-t border-gray-100 flex justify-between items-center">
+                  <span className="text-lg font-black text-gray-900">
+                    {order.budget ? `${order.budget.toLocaleString()} ₸` : 'Договорная'}
+                  </span>
+                  <span className="text-xs font-medium text-blue-600 hover:underline">Подробнее →</span>
                 </div>
               </div>
             ))}
@@ -241,36 +158,25 @@ export default function App() {
         )}
       </main>
 
-      {/* Modals */}
-      {isModalOpen && (
-        <CreateOrderModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onOrderCreated={fetchOrders}
-        />
-      )}
-
-      {selectedOrder && (
-        <OrderDetailsModal
-          order={selectedOrder}
-          role={role}
-          onClose={() => setSelectedOrder(null)}
-        />
-      )}
-
-      {isMyOrdersOpen && (
-        <MyOrdersModal
-          isOpen={isMyOrdersOpen}
-          onClose={() => setIsMyOrdersOpen(false)}
-        />
-      )}
-
-      {isAuthOpen && (
-        <AuthModal
-          isOpen={isAuthOpen}
-          onClose={() => setIsAuthOpen(false)}
-        />
-      )}
+      {/* Модальные окна */}
+      <CreateOrderModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)} 
+        onOrderCreated={fetchOrders}
+      />
+      <OrderDetailsModal 
+        isOpen={!!selectedOrder} 
+        order={selectedOrder} 
+        onClose={() => setSelectedOrder(null)} 
+      />
+      <MyOrdersModal 
+        isOpen={isMyOrdersOpen} 
+        onClose={() => setIsMyOrdersOpen(false)} 
+      />
+      <AuthModal 
+        isOpen={isAuthOpen} 
+        onClose={() => setIsAuthOpen(false)} 
+      />
     </div>
   );
 }
