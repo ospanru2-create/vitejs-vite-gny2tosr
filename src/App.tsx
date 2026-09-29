@@ -6,65 +6,75 @@ import MyOrdersModal from './MyOrdersModal';
 import AuthModal from './AuthModal';
 
 export default function App() {
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('Все');
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Модальные окна
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isMyOrdersOpen, setIsMyOrdersOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
-  
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<string>('Все');
 
-  const categories = ['Все', 'Ремонт', 'Клининг', 'Перевозки', 'Сантехника', 'Электрика', 'Красота'];
+  const categories = ['Все', 'Ремонт и отделка', 'Сантехника', 'Электрика', 'Клининг', 'Перевозки'];
 
   const fetchOrders = async () => {
     setLoading(true);
-    let query = supabase.from('orders').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*, responses(*)')
+      .order('created_at', { ascending: false });
 
-    if (selectedCategory !== 'Все') {
-      query = query.eq('category', selectedCategory);
-    }
-
-    const { data, error } = await query;
-    if (error) {
-      console.error('Ошибка получения заказов:', error);
-    } else {
-      setOrders(data || []);
+    if (!error && data) {
+      setOrders(data);
     }
     setLoading(false);
   };
 
   useEffect(() => {
     fetchOrders();
-  }, [selectedCategory]);
+  }, []);
+
+  // Фильтрация заказов по категории, поисковому запросу и актуальному статусу
+  const filteredOrders = orders.filter((order) => {
+    const matchesCategory = selectedCategory === 'Все' || order.category === selectedCategory;
+    const matchesSearch = 
+      order.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Показывать на главной только открытые заказы (или без статуса)
+    const isActivelySearching = !order.status || order.status === 'open';
+
+    return matchesCategory && matchesSearch && isActivelySearching;
+  });
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
-      {/* Шапка */}
+    <div className="min-h-screen bg-gray-50 text-gray-800 font-sans">
+      {/* Шапка сайта */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-black text-blue-600 tracking-tight cursor-pointer" onClick={() => setSelectedCategory('Все')}>
-              uslugikz<span className="text-gray-400 font-normal">.asia</span>
-            </h1>
+        <div className="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setSelectedCategory('Все'); setSearchQuery(''); }}>
+            <span className="text-2xl font-black text-blue-600 tracking-tight">uslugikz</span>
+            <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-full">.asia</span>
           </div>
 
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setIsMyOrdersOpen(true)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition"
+              className="text-xs sm:text-sm font-semibold text-gray-600 hover:text-blue-600 px-3 py-2 rounded-xl hover:bg-gray-100 transition"
             >
               Мои заказы
             </button>
             <button 
               onClick={() => setIsAuthOpen(true)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition"
+              className="text-xs sm:text-sm font-semibold text-gray-600 hover:text-blue-600 px-3 py-2 rounded-xl hover:bg-gray-100 transition"
             >
               Войти
             </button>
             <button 
-              onClick={() => setIsCreateModalOpen(true)}
-              className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition shadow-sm shadow-blue-200"
+              onClick={() => setIsCreateOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl shadow-md shadow-blue-200 transition"
             >
               + Создать заказ
             </button>
@@ -72,107 +82,154 @@ export default function App() {
         </div>
       </header>
 
-      {/* Основной контент */}
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        {/* Баннер */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-8 text-white mb-8 shadow-lg">
-          <h2 className="text-3xl font-extrabold mb-2">Платформа поиска исполнителей и заказов</h2>
-          <p className="text-blue-100 mb-6 max-w-xl">
+      {/* Баннер */}
+      <section className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white py-12 px-4 shadow-inner">
+        <div className="max-w-4xl mx-auto text-center space-y-4">
+          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
+            Платформа поиска исполнителей и заказов
+          </h1>
+          <p className="text-blue-100 text-sm sm:text-base max-w-2xl mx-auto font-medium">
             Публикуйте заказы или находите клиентов по всей Республике Казахстан быстро и без посредников.
           </p>
-          <button 
-            onClick={() => setIsCreateModalOpen(true)}
-            className="px-6 py-3 bg-white text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition shadow-md"
-          >
-            Разместить задание
-          </button>
-        </div>
-
-        {/* Категории */}
-        <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition ${
-                selectedCategory === cat 
-                  ? 'bg-blue-600 text-white shadow-sm' 
-                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {/* Лента заказов */}
-        <div className="mb-4 flex justify-between items-center">
-          <h3 className="text-xl font-bold text-gray-800">
-            {selectedCategory === 'Все' ? 'Все актуальные заказы' : `Заказы в категории: ${selectedCategory}`}
-          </h3>
-          <span className="text-sm text-gray-500">Всего: {orders.length}</span>
-        </div>
-
-        {loading ? (
-          <div className="text-center py-12 text-gray-500">Загрузка заказов из базы...</div>
-        ) : orders.length === 0 ? (
-          <div className="bg-white rounded-2xl p-12 text-center border border-gray-200">
-            <p className="text-gray-500 mb-4">В этой категории пока нет опубликованных заказов.</p>
+          <div className="pt-2">
             <button 
-              onClick={() => setIsCreateModalOpen(true)}
-              className="px-4 py-2 bg-blue-50 text-blue-600 font-medium rounded-xl hover:bg-blue-100 transition"
+              onClick={() => setIsCreateOpen(true)}
+              className="bg-white text-blue-700 font-bold px-6 py-3.5 rounded-2xl shadow-lg hover:bg-blue-50 transition text-sm sm:text-base"
             >
-              Будьте первым — создайте заказ
+              Разместить задание
             </button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {orders.map((order) => (
-              <div 
-                key={order.id} 
-                onClick={() => setSelectedOrder(order)}
-                className="bg-white border border-gray-200 rounded-2xl p-5 hover:shadow-md transition cursor-pointer flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="px-2.5 py-1 bg-blue-50 text-blue-600 text-xs font-semibold rounded-lg">
-                      {order.category}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {new Date(order.created_at).toLocaleDateString('ru-RU')}
-                    </span>
-                  </div>
-                  <h4 className="font-bold text-gray-900 text-lg mb-2 line-clamp-1">{order.title}</h4>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{order.description}</p>
-                </div>
+        </div>
+      </section>
 
-                <div className="pt-3 border-t border-gray-100 flex justify-between items-center">
-                  <span className="text-lg font-black text-gray-900">
-                    {order.budget ? `${order.budget.toLocaleString()} ₸` : 'Договорная'}
-                  </span>
-                  <span className="text-xs font-medium text-blue-600 hover:underline">Подробнее →</span>
-                </div>
-              </div>
+      {/* Основной контент */}
+      <main className="max-w-6xl mx-auto px-4 py-8">
+        
+        {/* Фильтры и Поиск */}
+        <div className="space-y-4 mb-8">
+          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+            {/* Поисковая строка */}
+            <div className="w-full sm:w-80 relative">
+              <input 
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Поиск по заказам..."
+                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white shadow-sm"
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 text-xs font-bold"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <div className="text-xs text-gray-500 font-semibold">
+              Найдено заказов: <span className="text-blue-600 font-bold">{filteredOrders.length}</span>
+            </div>
+          </div>
+
+          {/* Кнопки категорий */}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition ${
+                  selectedCategory === cat
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                {cat}
+              </button>
             ))}
           </div>
-        )}
+        </div>
+
+        {/* Список актуальных заказов */}
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Актуальные заказы</h2>
+
+          {loading ? (
+            <div className="text-center py-12 text-gray-400 text-sm">Загрузка заказов...</div>
+          ) : filteredOrders.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-300 text-gray-400 text-sm">
+              В этой категории пока нет опубликованных заказов.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredOrders.map((ord) => {
+                const responsesCount = ord.responses ? ord.responses.length : 0;
+                return (
+                  <div 
+                    key={ord.id}
+                    className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-blue-200 transition flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
+                          {ord.category || 'Общее'}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {ord.created_at ? new Date(ord.created_at).toLocaleDateString('ru-RU') : ''}
+                        </span>
+                      </div>
+
+                      <h3 className="text-lg font-bold text-gray-900 mb-1">{ord.title}</h3>
+                      <p className="text-xs text-gray-500 line-clamp-2 mb-4 leading-relaxed">
+                        {ord.description || 'Описание не указано'}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-2">
+                      <div className="text-lg font-black text-blue-600">
+                        {ord.budget ? `${Number(ord.budget).toLocaleString()} ₸` : 'Договорная'}
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {responsesCount > 0 && (
+                          <span className="text-xs font-semibold text-gray-400 bg-gray-50 px-2 py-1 rounded-md">
+                            💬 {responsesCount}
+                          </span>
+                        )}
+                        <button
+                          onClick={() => setSelectedOrder(ord)}
+                          className="text-xs font-bold text-blue-600 hover:text-blue-800 transition"
+                        >
+                          Подробнее →
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </main>
 
       {/* Модальные окна */}
       <CreateOrderModal 
-        isOpen={isCreateModalOpen} 
-        onClose={() => setIsCreateModalOpen(false)} 
+        isOpen={isCreateOpen} 
+        onClose={() => setIsCreateOpen(false)} 
         onOrderCreated={fetchOrders}
       />
+
       <OrderDetailsModal 
         isOpen={!!selectedOrder} 
         order={selectedOrder} 
         onClose={() => setSelectedOrder(null)} 
       />
+
       <MyOrdersModal 
         isOpen={isMyOrdersOpen} 
         onClose={() => setIsMyOrdersOpen(false)} 
       />
+
       <AuthModal 
         isOpen={isAuthOpen} 
         onClose={() => setIsAuthOpen(false)} 
