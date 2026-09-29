@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 
 interface OrderDetailsModalProps {
@@ -14,6 +14,28 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [responses, setResponses] = useState<any[]>([]);
+  const [loadingResponses, setLoadingResponses] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && order?.id) {
+      fetchResponses();
+    }
+  }, [isOpen, order]);
+
+  const fetchResponses = async () => {
+    setLoadingResponses(true);
+    const { data, error } = await supabase
+      .from('responses')
+      .select('*')
+      .eq('order_id', order.id)
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      setResponses(data);
+    }
+    setLoadingResponses(false);
+  };
 
   if (!isOpen || !order) return null;
 
@@ -35,14 +57,15 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
     if (error) {
       alert('Ошибка при отправке отклика: ' + error.message);
     } else {
-      setSuccessMsg('Ваш отклик успешно отправлен заказчику!');
+      setSuccessMsg('Ваш отклик успешно отправлен!');
+      fetchResponses(); // обновить список откликов
       setTimeout(() => {
         setSuccessMsg('');
         setShowResponseForm(false);
         setPrice('');
         setComment('');
         setPhone('');
-      }, 2000);
+      }, 1500);
     }
   };
 
@@ -78,48 +101,84 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
           </p>
         </div>
 
-        {/* Форма отклика мастера */}
+        {/* Список откликов мастеров */}
+        <div className="mb-6">
+          <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center justify-between">
+            <span>Отклики мастеров</span>
+            <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
+              {responses.length}
+            </span>
+          </h3>
+
+          {loadingResponses ? (
+            <div className="text-xs text-gray-400 text-center py-2">Загрузка откликов...</div>
+          ) : responses.length === 0 ? (
+            <div className="text-xs text-gray-400 text-center py-3 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+              Пока нет откликов. Будьте первым!
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {responses.map((res) => (
+                <div key={res.id} className="p-3.5 bg-white border border-gray-200 rounded-xl shadow-sm hover:border-blue-200 transition">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm font-bold text-blue-600">
+                      {res.price ? `${Number(res.price).toLocaleString()} ₸` : 'Цена по договору'}
+                    </span>
+                    <a 
+                      href={`tel:${res.phone}`}
+                      className="text-xs bg-green-50 text-green-700 font-semibold px-2.5 py-1 rounded-lg border border-green-200 hover:bg-green-100 transition"
+                    >
+                      📞 {res.phone}
+                    </a>
+                  </div>
+                  {res.comment && (
+                    <p className="text-xs text-gray-600 mt-1">{res.comment}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Форма отклика */}
         {showResponseForm ? (
-          <form onSubmit={handleSendResponse} className="bg-blue-50/60 border border-blue-100 p-5 rounded-2xl mb-4 space-y-4">
-            <h3 className="text-base font-bold text-gray-900">Откликнуться на задание</h3>
+          <form onSubmit={handleSendResponse} className="bg-blue-50/60 border border-blue-100 p-5 rounded-2xl mb-4 space-y-3">
+            <h3 className="text-sm font-bold text-gray-900">Ваше предложение</h3>
 
             {successMsg ? (
-              <div className="p-3 bg-green-100 text-green-800 rounded-xl text-center text-sm font-medium">
+              <div className="p-3 bg-green-100 text-green-800 rounded-xl text-center text-xs font-semibold">
                 {successMsg}
               </div>
             ) : (
               <>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Ваше ценовое предложение (₸)</label>
                   <input 
                     type="number"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
-                    placeholder={order.budget ? String(order.budget) : "Укажите вашу цену"}
-                    className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="Ваша цена (₸)"
+                    className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Ваш номер телефона *</label>
                   <input 
                     type="tel"
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+7 (707) 123-45-67"
-                    className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="Телефон для связи *"
+                    className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Комментарий к отклику</label>
                   <textarea 
-                    rows={3}
+                    rows={2}
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    placeholder="Расскажите о вашем опыте или предложите условия..."
-                    className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="Комментарий (опыт, сроки, гарантия)..."
+                    className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
 
@@ -127,14 +186,14 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition shadow-md shadow-blue-200 disabled:opacity-50"
+                    className="flex-1 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 transition"
                   >
-                    {loading ? 'Отправка...' : 'Предложить услуги'}
+                    {loading ? 'Отправка...' : 'Отправить предложение'}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowResponseForm(false)}
-                    className="px-4 py-2.5 bg-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-300 transition"
+                    className="px-3 py-2 bg-gray-200 text-gray-700 text-xs font-semibold rounded-xl hover:bg-gray-300 transition"
                   >
                     Отмена
                   </button>
@@ -143,12 +202,12 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
             )}
           </form>
         ) : (
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3">
             <button
               onClick={() => setShowResponseForm(true)}
-              className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition shadow-lg shadow-blue-200"
+              className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition shadow-md shadow-blue-100"
             >
-              Откликнуться на заказ
+              Откликнуться
             </button>
             <button 
               onClick={onClose}
