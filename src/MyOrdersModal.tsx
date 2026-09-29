@@ -13,11 +13,12 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Автозаполнение из localStorage, если ранее уже создавали заказ
-    const savedPhone = localStorage.getItem('user_phone');
-    if (savedPhone) {
-      setPhoneFilter(savedPhone);
-      handleSearch(savedPhone);
+    if (isOpen) {
+      const savedPhone = localStorage.getItem('user_phone');
+      if (savedPhone) {
+        setPhoneFilter(savedPhone);
+        handleSearch(savedPhone);
+      }
     }
   }, [isOpen]);
 
@@ -80,9 +81,8 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
           ✕
         </button>
 
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Мои заказы</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Управление моими заказами</h2>
 
-        {/* Поиск заказов по номеру телефона */}
         <div className="flex gap-2 mb-6">
           <input 
             type="tel"
@@ -100,7 +100,6 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
           </button>
         </div>
 
-        {/* Список найденных заказов */}
         {isSearched && (
           <div>
             {orders.length === 0 ? (
@@ -124,7 +123,6 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
                     </div>
 
                     <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                      {/* Выбор статуса */}
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-gray-500 font-medium">Статус:</span>
                         <select
@@ -140,7 +138,7 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
 
                       <button
                         onClick={() => handleDeleteOrder(ord.id)}
-                        className="text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1 hover:bg-red-50 rounded-lg transition"
+                        className="text-xs text-red-500 hover:text-red-700 font-medium px-2.5 py-1 hover:bg-red-50 rounded-lg transition"
                       >
                         Удалить
                       </button>
