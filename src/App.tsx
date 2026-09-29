@@ -10,6 +10,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('Все');
   const [searchQuery, setSearchQuery] = useState('');
+  const [user, setUser] = useState<any>(null);
   
   // Модальные окна
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -34,16 +35,38 @@ export default function App() {
 
   useEffect(() => {
     fetchOrders();
+
+    // Проверка текущей сессии пользователя
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user?.user_metadata?.phone) {
+        localStorage.setItem('user_phone', session.user.user_metadata.phone);
+      }
+    });
+
+    // Подписка на изменения состояния авторизации
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user?.user_metadata?.phone) {
+        localStorage.setItem('user_phone', session.user.user_metadata.phone);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Фильтрация заказов по категории, поисковому запросу и актуальному статусу
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    alert('Вы вышли из системы');
+  };
+
   const filteredOrders = orders.filter((order) => {
     const matchesCategory = selectedCategory === 'Все' || order.category === selectedCategory;
     const matchesSearch = 
       order.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.description?.toLowerCase().includes(searchQuery.toLowerCase());
     
-    // Показывать на главной только открытые заказы (или без статуса)
     const isActivelySearching = !order.status || order.status === 'open';
 
     return matchesCategory && matchesSearch && isActivelySearching;
@@ -59,22 +82,38 @@ export default function App() {
             <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-full">.asia</span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button 
               onClick={() => setIsMyOrdersOpen(true)}
-              className="text-xs sm:text-sm font-semibold text-gray-600 hover:text-blue-600 px-3 py-2 rounded-xl hover:bg-gray-100 transition"
+              className="text-xs sm:text-sm font-semibold text-gray-600 hover:text-blue-600 px-2.5 py-2 rounded-xl hover:bg-gray-100 transition"
             >
               Мои заказы
             </button>
-            <button 
-              onClick={() => setIsAuthOpen(true)}
-              className="text-xs sm:text-sm font-semibold text-gray-600 hover:text-blue-600 px-3 py-2 rounded-xl hover:bg-gray-100 transition"
-            >
-              Войти
-            </button>
+
+            {user ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-gray-700 bg-gray-100 px-3 py-2 rounded-xl">
+                  👤 {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                </span>
+                <button
+                  onClick={handleSignOut}
+                  className="text-xs font-semibold text-red-500 hover:text-red-700 px-2 py-2 hover:bg-red-50 rounded-xl transition"
+                >
+                  Выйти
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={() => setIsAuthOpen(true)}
+                className="text-xs sm:text-sm font-semibold text-gray-600 hover:text-blue-600 px-3 py-2 rounded-xl hover:bg-gray-100 transition"
+              >
+                Войти
+              </button>
+            )}
+
             <button 
               onClick={() => setIsCreateOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl shadow-md shadow-blue-200 transition"
+              className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold px-3.5 py-2.5 rounded-xl shadow-md shadow-blue-200 transition"
             >
               + Создать заказ
             </button>
@@ -108,7 +147,6 @@ export default function App() {
         {/* Фильтры и Поиск */}
         <div className="space-y-4 mb-8">
           <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-            {/* Поисковая строка */}
             <div className="w-full sm:w-80 relative">
               <input 
                 type="text"
@@ -132,7 +170,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Кнопки категорий */}
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
             {categories.map((cat) => (
               <button
