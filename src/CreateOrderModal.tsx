@@ -145,3 +145,4 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
     </div>
   );
 }
+localStorage.setItem('user_phone', phone);
