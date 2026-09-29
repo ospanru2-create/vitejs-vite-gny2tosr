@@ -11,6 +11,8 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
   const [isSearched, setIsSearched] = useState(false);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedOrderResponses, setSelectedOrderResponses] = useState<any[] | null>(null);
+  const [activeOrderTitle, setActiveOrderTitle] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -31,7 +33,7 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
 
     const { data, error } = await supabase
       .from('orders')
-      .select('*')
+      .select('*, responses(*)')
       .eq('phone', targetPhone.trim())
       .order('created_at', { ascending: false });
 
@@ -81,73 +83,133 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
           ✕
         </button>
 
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Управление моими заказами</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">
+          {selectedOrderResponses ? 'Отклики на заказ' : 'Управление моими заказами'}
+        </h2>
 
-        <div className="flex gap-2 mb-6">
-          <input 
-            type="tel"
-            value={phoneFilter}
-            onChange={(e) => setPhoneFilter(e.target.value)}
-            placeholder="Введите ваш номер телефона..."
-            className="flex-1 border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          />
-          <button
-            onClick={() => handleSearch()}
-            disabled={loading}
-            className="px-5 py-2.5 bg-blue-600 text-white font-semibold text-sm rounded-xl hover:bg-blue-700 transition"
-          >
-            {loading ? 'Поиск...' : 'Найти'}
-          </button>
-        </div>
-
-        {isSearched && (
+        {/* Экран просмотра откликов по конкретному заказу */}
+        {selectedOrderResponses ? (
           <div>
-            {orders.length === 0 ? (
+            <button 
+              onClick={() => setSelectedOrderResponses(null)}
+              className="mb-4 text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              ← Назад к списку заказов
+            </button>
+            <p className="text-sm font-bold text-gray-800 mb-3">{activeOrderTitle}</p>
+
+            {selectedOrderResponses.length === 0 ? (
               <div className="text-center py-8 text-gray-400 text-sm bg-gray-50 rounded-xl border border-dashed">
-                Заказов с таким номером телефона не найдено
+                На этот заказ пока нет откликов от мастеров
               </div>
             ) : (
-              <div className="space-y-4">
-                {orders.map((ord) => (
-                  <div key={ord.id} className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <span className="text-xs text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded-md">
-                          {ord.category || 'Общее'}
-                        </span>
-                        <h3 className="font-bold text-gray-900 mt-1">{ord.title}</h3>
-                      </div>
-                      <span className="text-sm font-black text-blue-600">
-                        {ord.budget ? `${Number(ord.budget).toLocaleString()} ₸` : 'Договорная'}
+              <div className="space-y-3">
+                {selectedOrderResponses.map((res) => (
+                  <div key={res.id} className="p-4 border border-gray-200 rounded-xl bg-gray-50/50 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-base font-extrabold text-blue-600">
+                        {res.price ? `${Number(res.price).toLocaleString()} ₸` : 'Договорная'}
                       </span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500 font-medium">Статус:</span>
-                        <select
-                          value={ord.status || 'open'}
-                          onChange={(e) => handleStatusChange(ord.id, e.target.value)}
-                          className="text-xs border border-gray-300 rounded-lg px-2 py-1 bg-gray-50 font-medium text-gray-700"
-                        >
-                          <option value="open">🟢 В поиске</option>
-                          <option value="in_progress">🟡 В работе</option>
-                          <option value="completed">🔵 Завершен</option>
-                        </select>
-                      </div>
-
-                      <button
-                        onClick={() => handleDeleteOrder(ord.id)}
-                        className="text-xs text-red-500 hover:text-red-700 font-medium px-2.5 py-1 hover:bg-red-50 rounded-lg transition"
+                      <a 
+                        href={`tel:${res.phone}`}
+                        className="text-xs bg-green-100 text-green-800 font-bold px-3 py-1.5 rounded-lg border border-green-300 hover:bg-green-200 transition"
                       >
-                        Удалить
-                      </button>
+                        📞 {res.phone}
+                      </a>
                     </div>
+                    {res.comment && (
+                      <p className="text-xs text-gray-700 bg-white p-2.5 rounded-lg border border-gray-100">
+                        {res.comment}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
             )}
           </div>
+        ) : (
+          <>
+            {/* Поиск по номеру телефона */}
+            <div className="flex gap-2 mb-6">
+              <input 
+                type="tel"
+                value={phoneFilter}
+                onChange={(e) => setPhoneFilter(e.target.value)}
+                placeholder="Введите ваш номер телефона..."
+                className="flex-1 border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+              <button
+                onClick={() => handleSearch()}
+                disabled={loading}
+                className="px-5 py-2.5 bg-blue-600 text-white font-semibold text-sm rounded-xl hover:bg-blue-700 transition"
+              >
+                {loading ? 'Поиск...' : 'Найти'}
+              </button>
+            </div>
+
+            {/* Список найденных заказов */}
+            {isSearched && (
+              <div>
+                {orders.length === 0 ? (
+                  <div className="text-center py-8 text-gray-400 text-sm bg-gray-50 rounded-xl border border-dashed">
+                    Заказов с таким номером телефона не найдено
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {orders.map((ord) => {
+                      const responsesCount = ord.responses ? ord.responses.length : 0;
+                      return (
+                        <div key={ord.id} className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm space-y-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="text-xs text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded-md">
+                                {ord.category || 'Общее'}
+                              </span>
+                              <h3 className="font-bold text-gray-900 mt-1">{ord.title}</h3>
+                            </div>
+                            <span className="text-sm font-black text-blue-600">
+                              {ord.budget ? `${Number(ord.budget).toLocaleString()} ₸` : 'Договорная'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                            <button
+                              onClick={() => {
+                                setSelectedOrderResponses(ord.responses || []);
+                                setActiveOrderTitle(ord.title);
+                              }}
+                              className="text-xs font-semibold bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition"
+                            >
+                              💬 Отклики ({responsesCount})
+                            </button>
+
+                            <div className="flex items-center gap-2">
+                              <select
+                                value={ord.status || 'open'}
+                                onChange={(e) => handleStatusChange(ord.id, e.target.value)}
+                                className="text-xs border border-gray-300 rounded-lg px-2 py-1 bg-gray-50 font-medium text-gray-700"
+                              >
+                                <option value="open">🟢 В поиске</option>
+                                <option value="in_progress">🟡 В работе</option>
+                                <option value="completed">🔵 Завершен</option>
+                              </select>
+
+                              <button
+                                onClick={() => handleDeleteOrder(ord.id)}
+                                className="text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1 hover:bg-red-50 rounded-lg transition"
+                              >
+                                Удалить
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
