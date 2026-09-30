@@ -49,9 +49,7 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
       .update({ status: newStatus })
       .eq('id', orderId);
 
-    if (error) {
-      alert('Ошибка при изменении статуса: ' + error.message);
-    } else {
+    if (!error) {
       setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
     }
   };
@@ -64,15 +62,13 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
       .delete()
       .eq('id', orderId);
 
-    if (error) {
-      alert('Ошибка при удалении: ' + error.message);
-    } else {
+    if (!error) {
       setOrders(orders.filter(o => o.id !== orderId));
     }
   };
 
-  // Форматирование номера для WhatsApp
   const cleanPhoneForWhatsapp = (p: string) => {
+    if (!p) return '';
     return p.replace(/[^0-9]/g, '');
   };
 
@@ -96,11 +92,15 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
           <div>
             <button 
               onClick={() => setSelectedOrderResponses(null)}
-              className="mb-4 text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+              className="mb-3 text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
             >
               ← Назад к списку заказов
             </button>
-            <p className="text-sm font-bold text-gray-800 mb-3">{activeOrderTitle}</p>
+
+            <div className="bg-blue-50/60 p-3 rounded-xl mb-4 border border-blue-100">
+              <span className="text-[10px] uppercase font-bold text-blue-500 tracking-wider">Заказ</span>
+              <p className="text-sm font-bold text-gray-900">{activeOrderTitle}</p>
+            </div>
 
             {selectedOrderResponses.length === 0 ? (
               <div className="text-center py-8 text-gray-400 text-sm bg-gray-50 rounded-xl border border-dashed">
@@ -109,32 +109,40 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
             ) : (
               <div className="space-y-3">
                 {selectedOrderResponses.map((res) => (
-                  <div key={res.id} className="p-4 border border-gray-200 rounded-xl bg-gray-50/50 space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-base font-extrabold text-blue-600">
-                        {res.price ? `${Number(res.price).toLocaleString()} ₸` : 'Договорная'}
-                      </span>
+                  <div key={res.id} className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <span className="text-xs text-gray-400 font-medium block mb-0.5">Предложенная цена</span>
+                        <span className="text-lg font-black text-blue-600">
+                          {res.price ? `${Number(res.price).toLocaleString()} ₸` : 'Договорная'}
+                        </span>
+                      </div>
+
                       <div className="flex items-center gap-2">
-                        <a 
-                          href={`https://wa.me/${cleanPhoneForWhatsapp(res.phone)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-xs bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-lg hover:bg-emerald-600 transition flex items-center gap-1"
-                        >
-                          💬 WhatsApp
-                        </a>
+                        {res.phone && (
+                          <a 
+                            href={`https://wa.me/${cleanPhoneForWhatsapp(res.phone)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-3 py-2 rounded-xl transition flex items-center gap-1 shadow-sm"
+                          >
+                            💬 WhatsApp
+                          </a>
+                        )}
                         <a 
                           href={`tel:${res.phone}`}
-                          className="text-xs bg-gray-100 text-gray-800 font-bold px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-200 transition"
+                          className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold px-3 py-2 rounded-xl border border-gray-200 transition"
                         >
-                          📞 {res.phone}
+                          📞 {res.phone || 'Без номера'}
                         </a>
                       </div>
                     </div>
+
                     {res.comment && (
-                      <p className="text-xs text-gray-700 bg-white p-2.5 rounded-lg border border-gray-100">
+                      <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 text-xs text-gray-700 leading-relaxed">
+                        <span className="font-semibold text-gray-500 block mb-1">Комментарий мастера:</span>
                         {res.comment}
-                      </p>
+                      </div>
                     )}
                   </div>
                 ))}
@@ -154,7 +162,7 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
               <button
                 onClick={() => handleSearch()}
                 disabled={loading}
-                className="px-5 py-2.5 bg-blue-600 text-white font-semibold text-sm rounded-xl hover:bg-blue-700 transition"
+                className="px-5 py-2.5 bg-blue-600 text-white font-semibold text-sm rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
               >
                 {loading ? 'Поиск...' : 'Найти'}
               </button>
