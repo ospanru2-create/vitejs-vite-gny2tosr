@@ -71,12 +71,17 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
     const imageUrls: string[] = [];
 
     for (const file of files) {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+      // Совместимость с iOS и чистка имён файлов
+      const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${safeName}`;
 
       const { data, error } = await supabase.storage
         .from('order-photos')
-        .upload(fileName, file);
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: file.type || 'image/jpeg'
+        });
 
       if (!error && data) {
         const { data: publicUrlData } = supabase.storage
@@ -127,7 +132,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
       <div className="bg-white rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-2xl relative my-auto max-h-[85vh] flex flex-col">
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold z-10 p-1"
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold z-10 p-1 bg-white/80 rounded-full"
         >
           ✕
         </button>
@@ -220,11 +225,10 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
             />
           </div>
 
-          {/* Галочка Срочный / Премиум */}
           <div className="bg-amber-50 p-3.5 rounded-xl border border-amber-200 flex items-center justify-between">
             <div>
               <span className="text-xs font-bold text-amber-900 block">🔥 Выделить как СРОЧНЫЙ / ПРЕМИУМ</span>
-              <span className="text-[11px] text-amber-700 block">Заказ подсветится жёлтым и будет закреплен наверху</span>
+              <span className="text-[11px] text-amber-700 block">Заказ подсветится и закрепится вверху</span>
             </div>
             <input 
               type="checkbox"
@@ -238,7 +242,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
             <label className="block text-xs font-semibold text-gray-600 mb-1">Прикрепить фото (до 3 шт.)</label>
             <input 
               type="file"
-              accept="image/*"
+              accept="image/*,image/heic,image/heif"
               multiple
               onChange={handleFileChange}
               className="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
@@ -251,7 +255,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
               disabled={loading}
               className="flex-1 py-3 bg-blue-600 text-white font-bold text-sm rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
             >
-              {loading ? 'Загрузка...' : 'Опубликовать заказ'}
+              {loading ? 'Публикация...' : 'Опубликовать заказ'}
             </button>
             <button
               type="button"
