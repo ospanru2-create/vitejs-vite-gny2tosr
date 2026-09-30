@@ -9,6 +9,7 @@ export default function App() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('Все');
+  const [selectedCity, setSelectedCity] = useState('Все города');
   const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState<any>(null);
   
@@ -19,6 +20,7 @@ export default function App() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
   const categories = ['Все', 'Ремонт и отделка', 'Сантехника', 'Электрика', 'Клининг', 'Перевозки'];
+  const cities = ['Все города', 'Астана', 'Алматы', 'Шымкент', 'Караганда', 'Актобе', 'Павлодар', 'Усть-Каменогорск', 'Семей', 'Атырау', 'Актау'];
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -36,7 +38,6 @@ export default function App() {
   useEffect(() => {
     fetchOrders();
 
-    // Проверка текущей сессии пользователя
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user?.user_metadata?.phone) {
@@ -44,7 +45,6 @@ export default function App() {
       }
     });
 
-    // Подписка на изменения состояния авторизации
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user?.user_metadata?.phone) {
@@ -63,13 +63,14 @@ export default function App() {
 
   const filteredOrders = orders.filter((order) => {
     const matchesCategory = selectedCategory === 'Все' || order.category === selectedCategory;
+    const matchesCity = selectedCity === 'Все города' || order.city === selectedCity || order.city === 'Весь Казахстан';
     const matchesSearch = 
       order.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.description?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const isActivelySearching = !order.status || order.status === 'open';
 
-    return matchesCategory && matchesSearch && isActivelySearching;
+    return matchesCategory && matchesCity && matchesSearch && isActivelySearching;
   });
 
   return (
@@ -77,7 +78,7 @@ export default function App() {
       {/* Шапка сайта */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setSelectedCategory('Все'); setSearchQuery(''); }}>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setSelectedCategory('Все'); setSelectedCity('Все города'); setSearchQuery(''); }}>
             <span className="text-2xl font-black text-blue-600 tracking-tight">uslugikz</span>
             <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-full">.asia</span>
           </div>
@@ -147,22 +148,36 @@ export default function App() {
         {/* Фильтры и Поиск */}
         <div className="space-y-4 mb-8">
           <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-            <div className="w-full sm:w-80 relative">
-              <input 
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Поиск по заказам..."
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white shadow-sm"
-              />
-              {searchQuery && (
-                <button 
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 text-xs font-bold"
-                >
-                  ✕
-                </button>
-              )}
+            <div className="flex gap-2 w-full sm:w-auto flex-1 max-w-lg">
+              {/* Выбор города */}
+              <select
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                className="border border-gray-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold text-gray-700 bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              >
+                {cities.map((c) => (
+                  <option key={c} value={c}>{c === 'Все города' ? '📍 Все города' : `📍 ${c}`}</option>
+                ))}
+              </select>
+
+              {/* Поисковая строка */}
+              <div className="flex-1 relative">
+                <input 
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Поиск по заказам..."
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white shadow-sm"
+                />
+                {searchQuery && (
+                  <button 
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 text-xs font-bold"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="text-xs text-gray-500 font-semibold">
@@ -170,6 +185,7 @@ export default function App() {
             </div>
           </div>
 
+          {/* Категории */}
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
             {categories.map((cat) => (
               <button
@@ -195,7 +211,7 @@ export default function App() {
             <div className="text-center py-12 text-gray-400 text-sm">Загрузка заказов...</div>
           ) : filteredOrders.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-300 text-gray-400 text-sm">
-              В этой категории пока нет опубликованных заказов.
+              В выбранном городе или категории пока нет опубликованных заказов.
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -208,9 +224,16 @@ export default function App() {
                   >
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
-                          {ord.category || 'Общее'}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
+                            {ord.category || 'Общее'}
+                          </span>
+                          {ord.city && (
+                            <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg font-medium">
+                              📍 {ord.city}
+                            </span>
+                          )}
+                        </div>
                         <span className="text-xs text-gray-400">
                           {ord.created_at ? new Date(ord.created_at).toLocaleDateString('ru-RU') : ''}
                         </span>
