@@ -75,21 +75,23 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-xl p-5 sm:p-6 shadow-2xl relative my-auto max-h-[85vh] flex flex-col">
+        
+        {/* Кнопка закрытия */}
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold"
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold z-10 p-1"
         >
           ✕
         </button>
 
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
+        <h2 className="text-xl font-bold text-gray-900 mb-4 shrink-0">
           {selectedOrderResponses ? 'Отклики мастеров' : 'Управление моими заказами'}
         </h2>
 
         {selectedOrderResponses ? (
-          <div>
+          <div className="overflow-y-auto pr-1 flex-1">
             <button 
               onClick={() => setSelectedOrderResponses(null)}
               className="mb-3 text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
@@ -120,7 +122,6 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
                           </span>
                         </div>
 
-                        {/* Кнопки контактов с явными стилями */}
                         <div className="flex items-center gap-2">
                           {phoneDigits && (
                             <a 
@@ -155,8 +156,9 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
             )}
           </div>
         ) : (
-          <>
-            <div className="flex gap-2 mb-6">
+          <div className="flex flex-col flex-1 min-h-0">
+            {/* Поиск по номеру */}
+            <div className="flex gap-2 mb-4 shrink-0">
               <input 
                 type="tel"
                 value={phoneFilter}
@@ -173,19 +175,20 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
               </button>
             </div>
 
+            {/* Прокручиваемый список заказов */}
             {isSearched && (
-              <div>
+              <div className="overflow-y-auto pr-1 flex-1">
                 {orders.length === 0 ? (
                   <div className="text-center py-8 text-gray-400 text-sm bg-gray-50 rounded-xl border border-dashed">
                     Заказов с таким номером телефона не найдено
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {orders.map((ord) => {
                       const responsesCount = ord.responses ? ord.responses.length : 0;
                       return (
                         <div key={ord.id} className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm space-y-3">
-                          <div className="flex justify-between items-start">
+                          <div className="flex justify-between items-start gap-2">
                             <div>
                               <div className="flex items-center gap-2 mb-1">
                                 <span className="text-xs text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded-md">
@@ -197,9 +200,9 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
                                   </span>
                                 )}
                               </div>
-                              <h3 className="font-bold text-gray-900">{ord.title}</h3>
+                              <h3 className="font-bold text-gray-900 text-sm sm:text-base">{ord.title}</h3>
                             </div>
-                            <span className="text-sm font-black text-blue-600">
+                            <span className="text-sm font-black text-blue-600 whitespace-nowrap">
                               {ord.budget ? `${Number(ord.budget).toLocaleString()} ₸` : 'Договорная'}
                             </span>
                           </div>
@@ -241,7 +244,7 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
                 )}
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>
