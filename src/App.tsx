@@ -10,6 +10,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('Все');
   const [selectedCity, setSelectedCity] = useState('Все города');
+  const [sortBy, setSortBy] = useState('newest'); // newest, price_desc, price_asc
   const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState<any>(null);
   
@@ -71,6 +72,15 @@ export default function App() {
     const isActivelySearching = !order.status || order.status === 'open';
 
     return matchesCategory && matchesCity && matchesSearch && isActivelySearching;
+  }).sort((a, b) => {
+    if (sortBy === 'price_desc') {
+      return (Number(b.budget) || 0) - (Number(a.budget) || 0);
+    }
+    if (sortBy === 'price_asc') {
+      return (Number(a.budget) || 0) - (Number(b.budget) || 0);
+    }
+    // по умолчанию - сначала новые
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 
   return (
@@ -149,7 +159,8 @@ export default function App() {
           {/* Фильтры и Поиск */}
           <div className="space-y-4 mb-8">
             <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-              <div className="flex gap-2 w-full sm:w-auto flex-1 max-w-lg">
+              <div className="flex flex-wrap gap-2 w-full sm:w-auto flex-1 max-w-xl">
+                {/* Выбор города */}
                 <select
                   value={selectedCity}
                   onChange={(e) => setSelectedCity(e.target.value)}
@@ -160,7 +171,19 @@ export default function App() {
                   ))}
                 </select>
 
-                <div className="flex-1 relative">
+                {/* Сортировка */}
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="border border-gray-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold text-gray-700 bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                >
+                  <option value="newest">🕒 Сначала новые</option>
+                  <option value="price_desc">💎 Сначала дорогие</option>
+                  <option value="price_asc">🏷️ Сначала дешевые</option>
+                </select>
+
+                {/* Поисковая строка */}
+                <div className="flex-1 min-w-[180px] relative">
                   <input 
                     type="text"
                     value={searchQuery}
@@ -184,6 +207,7 @@ export default function App() {
               </div>
             </div>
 
+            {/* Категории */}
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
               {categories.map((cat) => (
                 <button
@@ -215,6 +239,8 @@ export default function App() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {filteredOrders.map((ord) => {
                   const responsesCount = ord.responses ? ord.responses.length : 0;
+                  const imagesCount = ord.images ? ord.images.length : 0;
+
                   return (
                     <div 
                       key={ord.id}
@@ -229,6 +255,11 @@ export default function App() {
                             {ord.city && (
                               <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg font-medium">
                                 📍 {ord.city}
+                              </span>
+                            )}
+                            {imagesCount > 0 && (
+                              <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
+                                📷 {imagesCount}
                               </span>
                             )}
                           </div>
@@ -250,7 +281,7 @@ export default function App() {
 
                         <div className="flex items-center gap-3">
                           {responsesCount > 0 && (
-                            <span className="text-xs font-semibold text-gray-400 bg-gray-50 px-2 py-1 rounded-md">
+                            <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
                               💬 {responsesCount}
                             </span>
                           )}
@@ -271,7 +302,7 @@ export default function App() {
         </main>
       </div>
 
-      {/* Подвал (Footer) */}
+      {/* Подвал */}
       <footer className="bg-white border-t border-gray-200 mt-12 py-8">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-gray-500">
           <div className="flex items-center gap-2">
