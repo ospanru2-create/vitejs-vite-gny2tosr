@@ -16,7 +16,6 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
 
   useEffect(() => {
     if (isOpen) {
-      // Автоподстановка телефона из localStorage
       const savedPhone = localStorage.getItem('user_phone');
       if (savedPhone) {
         setPhone(savedPhone);
@@ -63,11 +62,18 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
           ✕
         </button>
 
-        {/* Категория и Дата */}
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
-            {order.category || 'Общее'}
-          </span>
+        {/* Категория, Город и Дата */}
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
+              {order.category || 'Общее'}
+            </span>
+            {order.city && (
+              <span className="text-xs font-semibold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-lg">
+                📍 {order.city}
+              </span>
+            )}
+          </div>
           <span className="text-xs text-gray-400">
             {order.created_at ? new Date(order.created_at).toLocaleDateString('ru-RU') : ''}
           </span>
