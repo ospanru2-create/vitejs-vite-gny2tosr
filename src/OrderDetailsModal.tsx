@@ -14,19 +14,31 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [viewsCount, setViewsCount] = useState<number>(0);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && order) {
       const savedName = localStorage.getItem('master_name') || '';
       const savedPhone = localStorage.getItem('user_phone') || '';
       if (savedName) setMasterName(savedName);
       if (savedPhone) setPhone(formatPhone(savedPhone));
+
+      incrementViews();
     }
-  }, [isOpen]);
+  }, [isOpen, order]);
+
+  const incrementViews = async () => {
+    const currentViews = (order.views || 0) + 1;
+    setViewsCount(currentViews);
+
+    await supabase
+      .from('orders')
+      .update({ views: currentViews })
+      .eq('id', order.id);
+  };
 
   if (!isOpen || !order) return null;
 
-  // Автоматическое форматирование номера под +7 (7XX) XXX-XX-XX
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, '');
     if (!numbers) return '';
@@ -57,7 +69,6 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
 
     setLoading(true);
 
-    // Проверка на повторный отклик с этого же номера
     const { data: existingResponses } = await supabase
       .from('responses')
       .select('id')
@@ -115,9 +126,14 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
               <span className="text-xs font-bold text-blue-600 bg-white px-2.5 py-1 rounded-lg border border-blue-100">
                 {order.category || 'Общее'}
               </span>
-              <span className="text-xs text-gray-500 font-medium">
-                📍 {order.city || 'Астана'}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 font-medium">
+                  📍 {order.city || 'Астана'}
+                </span>
+                <span className="text-xs text-gray-400 font-medium bg-white px-2 py-0.5 rounded-md border border-gray-200">
+                  👁️ {viewsCount}
+                </span>
+              </div>
             </div>
 
             <h3 className="text-lg font-black text-gray-900">{order.title}</h3>
@@ -134,7 +150,6 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
             </div>
           )}
 
-          {/* Галерея изображений */}
           {order.images && order.images.length > 0 && (
             <div>
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-2">Фотографии объекта</span>
@@ -152,7 +167,6 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
             </div>
           )}
 
-          {/* Форма отклика мастера */}
           <div className="pt-2 border-t border-gray-100">
             <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center justify-between">
               <span>Предложить свои услуги</span>
@@ -218,7 +232,6 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
           </div>
         </div>
 
-        {/* Увеличенное фото */}
         {selectedImage && (
           <div 
             className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 cursor-pointer"
