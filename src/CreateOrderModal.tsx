@@ -14,6 +14,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
   const [budget, setBudget] = useState('');
   const [phone, setPhone] = useState('');
   const [description, setDescription] = useState('');
+  const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -25,10 +26,40 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
 
   if (!isOpen) return null;
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const selectedFiles = Array.from(e.target.files).slice(0, 3); // Максимум 3 фото
+      setFiles(selectedFiles);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
+    const imageUrls: string[] = [];
+
+    // Загрузка изображений в Supabase Storage
+    for (const file of files) {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+
+      const { data, error } = await supabase.storage
+        .from('order-photos')
+        .upload(fileName, file);
+
+      if (!error && data) {
+        const { data: publicUrlData } = supabase.storage
+          .from('order-photos')
+          .getPublicUrl(fileName);
+
+        if (publicUrlData.publicUrl) {
+          imageUrls.push(publicUrlData.publicUrl);
+        }
+      }
+    }
+
+    // Сохранение заказа в базу
     const { error } = await supabase.from('orders').insert([
       {
         title,
@@ -37,6 +68,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
         budget: budget ? Number(budget) : null,
         phone,
         description,
+        images: imageUrls,
         status: 'open'
       }
     ]);
@@ -51,6 +83,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
       setTitle('');
       setBudget('');
       setDescription('');
+      setFiles([]);
       onOrderCreated();
       onClose();
     }
@@ -154,13 +187,24 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
             />
           </div>
 
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Прикрепить фото (до 3 шт.)</label>
+            <input 
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileChange}
+              className="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+            />
+          </div>
+
           <div className="flex gap-2 pt-2">
             <button
               type="submit"
               disabled={loading}
               className="flex-1 py-3 bg-blue-600 text-white font-bold text-sm rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
             >
-              {loading ? 'Публикация...' : 'Опубликовать заказ'}
+              {loading ? 'Загрузка...' : 'Опубликовать заказ'}
             </button>
             <button
               type="button"
