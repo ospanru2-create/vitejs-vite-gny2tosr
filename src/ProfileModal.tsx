@@ -25,7 +25,7 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
   }, [isOpen, user]);
 
   const loadProfile = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', user.id)
@@ -47,29 +47,79 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
 
   if (!isOpen || !user) return null;
 
+  const compressImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const MAX_SIZE = 1200;
+
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => resolve(blob || file),
+            'image/jpeg',
+            0.8
+          );
+        };
+        img.onerror = () => resolve(file);
+      };
+      reader.onerror = () => resolve(file);
+    });
+  };
+
   const handleUploadPortfolio = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     setUploading(true);
 
     const newImages: string[] = [...portfolio];
-    const selectedFiles = Array.from(e.target.files).slice(0, 5); // До 5 фото
+    const selectedFiles = Array.from(e.target.files).slice(0, 5);
 
     for (const file of selectedFiles) {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `portfolio_${user.id}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}.${fileExt}`;
+      try {
+        const compressedBlob = await compressImage(file);
+        const fileName = `portfolio_${user.id}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}.jpg`;
 
-      const { data, error } = await supabase.storage
-        .from('order-photos')
-        .upload(fileName, file);
-
-      if (!error && data) {
-        const { data: publicUrlData } = supabase.storage
+        const { data, error } = await supabase.storage
           .from('order-photos')
-          .getPublicUrl(fileName);
+          .upload(fileName, compressedBlob, {
+            contentType: 'image/jpeg',
+            cacheControl: '3600',
+            upsert: false
+          });
 
-        if (publicUrlData.publicUrl) {
-          newImages.push(publicUrlData.publicUrl);
+        if (!error && data) {
+          const { data: publicUrlData } = supabase.storage
+            .from('order-photos')
+            .getPublicUrl(fileName);
+
+          if (publicUrlData.publicUrl) {
+            newImages.push(publicUrlData.publicUrl);
+          }
         }
+      } catch (err) {
+        console.error('Ошибка загрузки портфолио:', err);
       }
     }
 
@@ -214,7 +264,6 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
             />
           </div>
 
-          {/* Секция Портфолио */}
           <div>
             <div className="flex justify-between items-center mb-2">
               <label className="block text-xs font-bold text-gray-700">Портфолио работ (фото выполненных заказов)</label>
@@ -246,7 +295,7 @@ export default function ProfileModal({ isOpen, onClose, user }: ProfileModalProp
               disabled={uploading}
               className="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
             />
-            {uploading && <p className="text-[10px] text-blue-600 font-semibold mt-1">Загрузка фото в портфолио...</p>}
+            {uploading && <p className="text-[10px] text-blue-600 font-semibold mt-1">Оптимизация и загрузка фото...</p>}
           </div>
 
           <div className="flex gap-2 pt-2">

@@ -37,6 +37,49 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
     }
   };
 
+  // Клиентская компрессия для iOS (HEIC / Large Images)
+  const compressImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const MAX_SIZE = 1200;
+
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => resolve(blob || file),
+            'image/jpeg',
+            0.8
+          );
+        };
+        img.onerror = () => resolve(file);
+      };
+      reader.onerror = () => resolve(file);
+    });
+  };
+
   const sendTelegramNotification = async (orderTitle: string, orderCat: string, orderCity: string, orderBudget: string, orderPhone: string, orderDesc: string, featured: boolean) => {
     if (!TELEGRAM_BOT_TOKEN) return;
 
@@ -71,26 +114,29 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
     const imageUrls: string[] = [];
 
     for (const file of files) {
-      // Совместимость с iOS и чистка имён файлов
-      const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${safeName}`;
+      try {
+        const compressedBlob = await compressImage(file);
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.jpg`;
 
-      const { data, error } = await supabase.storage
-        .from('order-photos')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false,
-          contentType: file.type || 'image/jpeg'
-        });
-
-      if (!error && data) {
-        const { data: publicUrlData } = supabase.storage
+        const { data, error } = await supabase.storage
           .from('order-photos')
-          .getPublicUrl(fileName);
+          .upload(fileName, compressedBlob, {
+            contentType: 'image/jpeg',
+            cacheControl: '3600',
+            upsert: false
+          });
 
-        if (publicUrlData.publicUrl) {
-          imageUrls.push(publicUrlData.publicUrl);
+        if (!error && data) {
+          const { data: publicUrlData } = supabase.storage
+            .from('order-photos')
+            .getPublicUrl(fileName);
+
+          if (publicUrlData.publicUrl) {
+            imageUrls.push(publicUrlData.publicUrl);
+          }
         }
+      } catch (err) {
+        console.error('Ошибка сжатия/загрузки:', err);
       }
     }
 
@@ -242,7 +288,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
             <label className="block text-xs font-semibold text-gray-600 mb-1">Прикрепить фото (до 3 шт.)</label>
             <input 
               type="file"
-              accept="image/*,image/heic,image/heif"
+              accept="image/*"
               multiple
               onChange={handleFileChange}
               className="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
@@ -255,7 +301,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
               disabled={loading}
               className="flex-1 py-3 bg-blue-600 text-white font-bold text-sm rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
             >
-              {loading ? 'Публикация...' : 'Опубликовать заказ'}
+              {loading ? 'Публикация и сжатие фото...' : 'Опубликовать заказ'}
             </button>
             <button
               type="button"
