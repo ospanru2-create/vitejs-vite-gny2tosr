@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 
 interface CreateOrderModalProps {
@@ -10,10 +10,18 @@ interface CreateOrderModalProps {
 export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: CreateOrderModalProps) {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Ремонт и отделка');
+  const [city, setCity] = useState('Астана');
   const [budget, setBudget] = useState('');
   const [phone, setPhone] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      const savedPhone = localStorage.getItem('user_phone');
+      if (savedPhone) setPhone(savedPhone);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -25,6 +33,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
       {
         title,
         category,
+        city,
         budget: budget ? Number(budget) : null,
         phone,
         description,
@@ -38,10 +47,9 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
       alert('Ошибка при создании заказа: ' + error.message);
     } else {
       localStorage.setItem('user_phone', phone);
-      alert('Заказ успешно создан и сохранен в базе!');
+      alert('Заказ успешно создан!');
       setTitle('');
       setBudget('');
-      setPhone('');
       setDescription('');
       onOrderCreated();
       onClose();
@@ -58,7 +66,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
           ✕
         </button>
 
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Создать заказ</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Создать новый заказ</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -68,24 +76,47 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Например: Ремонт смесителя, Уборка офиса..."
+              placeholder="Например: Ремонт смесителя, Уборка квартиры..."
               className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Категория</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
-            >
-              <option value="Ремонт и отделка">Ремонт и отделка</option>
-              <option value="Сантехника">Сантехника</option>
-              <option value="Электрика">Электрика</option>
-              <option value="Клининг">Клининг</option>
-              <option value="Перевозки">Перевозки</option>
-            </select>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Категория</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+              >
+                <option value="Ремонт и отделка">Ремонт и отделка</option>
+                <option value="Сантехника">Сантехника</option>
+                <option value="Электрика">Электрика</option>
+                <option value="Клининг">Клининг</option>
+                <option value="Перевозки">Перевозки</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Город</label>
+              <select
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+              >
+                <option value="Астана">Астана</option>
+                <option value="Алматы">Алматы</option>
+                <option value="Шымкент">Шымкент</option>
+                <option value="Караганда">Караганда</option>
+                <option value="Актобе">Актобе</option>
+                <option value="Павлодар">Павлодар</option>
+                <option value="Усть-Каменогорск">Усть-Каменогорск</option>
+                <option value="Семей">Семей</option>
+                <option value="Атырау">Атырау</option>
+                <option value="Актау">Актау</option>
+                <option value="Весь Казахстан">Весь Казахстан</option>
+              </select>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -95,7 +126,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
                 type="number"
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
-                placeholder="Оставьте пустым для договорной"
+                placeholder="Договорная"
                 className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
@@ -118,7 +149,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Укажите адрес, удобное время и подробности..."
+              placeholder="Укажите подробности, ориентиры или требования..."
               className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
