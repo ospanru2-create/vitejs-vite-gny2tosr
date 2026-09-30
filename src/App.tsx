@@ -5,6 +5,7 @@ import OrderDetailsModal from './OrderDetailsModal';
 import MyOrdersModal from './MyOrdersModal';
 import AuthModal from './AuthModal';
 import ProfileModal from './ProfileModal';
+import MastersListModal from './MastersListModal';
 
 export default function App() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -21,6 +22,7 @@ export default function App() {
   const [isMyOrdersOpen, setIsMyOrdersOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isMastersOpen, setIsMastersOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
   const categories = ['Все', 'Ремонт и отделка', 'Сантехника', 'Электрика', 'Клининг', 'Перевозки'];
@@ -105,10 +107,17 @@ export default function App() {
               <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-full">.asia</span>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3">
+              <button 
+                onClick={() => setIsMastersOpen(true)}
+                className="text-xs sm:text-sm font-semibold text-gray-600 hover:text-blue-600 px-2 py-2 rounded-xl hover:bg-gray-100 transition"
+              >
+                🛠️ Мастера
+              </button>
+
               <button 
                 onClick={() => setIsMyOrdersOpen(true)}
-                className="relative text-xs sm:text-sm font-semibold text-gray-600 hover:text-blue-600 px-2.5 py-2 rounded-xl hover:bg-gray-100 transition flex items-center gap-1.5"
+                className="relative text-xs sm:text-sm font-semibold text-gray-600 hover:text-blue-600 px-2 py-2 rounded-xl hover:bg-gray-100 transition flex items-center gap-1"
               >
                 Мои заказы
                 {totalResponsesCount > 0 && (
@@ -119,16 +128,16 @@ export default function App() {
               </button>
 
               {user ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2">
                   <button
                     onClick={() => setIsProfileOpen(true)}
-                    className="text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-xl transition flex items-center gap-1"
+                    className="text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 px-2.5 py-2 rounded-xl transition flex items-center gap-1"
                   >
                     👤 {user.user_metadata?.full_name || user.email?.split('@')[0]}
                   </button>
                   <button
                     onClick={handleSignOut}
-                    className="text-xs font-semibold text-red-500 hover:text-red-700 px-2 py-2 hover:bg-red-50 rounded-xl transition"
+                    className="text-xs font-semibold text-red-500 hover:text-red-700 px-1.5 py-2 hover:bg-red-50 rounded-xl transition"
                   >
                     Выйти
                   </button>
@@ -136,7 +145,7 @@ export default function App() {
               ) : (
                 <button 
                   onClick={() => setIsAuthOpen(true)}
-                  className="text-xs sm:text-sm font-semibold text-gray-600 hover:text-blue-600 px-3 py-2 rounded-xl hover:bg-gray-100 transition"
+                  className="text-xs sm:text-sm font-semibold text-gray-600 hover:text-blue-600 px-2.5 py-2 rounded-xl hover:bg-gray-100 transition"
                 >
                   Войти
                 </button>
@@ -144,7 +153,7 @@ export default function App() {
 
               <button 
                 onClick={() => setIsCreateOpen(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold px-3.5 py-2.5 rounded-xl shadow-md shadow-blue-200 transition"
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl shadow-md shadow-blue-200 transition"
               >
                 + Создать заказ
               </button>
@@ -161,12 +170,18 @@ export default function App() {
             <p className="text-blue-100 text-sm sm:text-base max-w-2xl mx-auto font-medium">
               Публикуйте заказы или находите клиентов по всей Республике Казахстан быстро и без посредников.
             </p>
-            <div className="pt-2">
+            <div className="pt-2 flex justify-center gap-3">
               <button 
                 onClick={() => setIsCreateOpen(true)}
                 className="bg-white text-blue-700 font-bold px-6 py-3.5 rounded-2xl shadow-lg hover:bg-blue-50 transition text-sm sm:text-base"
               >
                 Разместить задание
+              </button>
+              <button 
+                onClick={() => setIsMastersOpen(true)}
+                className="bg-blue-500/40 border border-white/30 text-white font-bold px-6 py-3.5 rounded-2xl hover:bg-blue-500/60 transition text-sm sm:text-base"
+              >
+                Найти мастера
               </button>
             </div>
           </div>
@@ -369,6 +384,11 @@ export default function App() {
         isOpen={isProfileOpen} 
         onClose={() => setIsProfileOpen(false)} 
         user={user}
+      />
+
+      <MastersListModal 
+        isOpen={isMastersOpen} 
+        onClose={() => setIsMastersOpen(false)} 
       />
     </div>
   );
