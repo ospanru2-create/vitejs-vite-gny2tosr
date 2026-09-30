@@ -111,8 +111,8 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
                 {selectedOrderResponses.map((res) => {
                   const phoneDigits = cleanPhoneForWhatsapp(res.phone);
                   return (
-                    <div key={res.id} className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm space-y-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div key={res.id} className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
                         <div>
                           <span className="text-xs text-gray-400 font-medium block">Предложенная цена</span>
                           <span className="text-lg font-black text-blue-600">
@@ -120,21 +120,22 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
                           </span>
                         </div>
 
-                        {/* Кнопки WhatsApp и Позвонить */}
+                        {/* Кнопки контактов с явными стилями */}
                         <div className="flex items-center gap-2">
                           {phoneDigits && (
                             <a 
                               href={`https://wa.me/${phoneDigits}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-xl transition flex items-center gap-1 shadow-sm"
+                              style={{ backgroundColor: '#25D366' }}
+                              className="text-xs text-white font-bold px-3 py-2 rounded-xl transition flex items-center gap-1 shadow-sm hover:opacity-90"
                             >
                               WhatsApp
                             </a>
                           )}
                           <a 
                             href={`tel:${res.phone}`}
-                            className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold px-3 py-2 rounded-xl border border-gray-200 transition"
+                            className="text-xs bg-gray-100 text-gray-800 font-bold px-3 py-2 rounded-xl border border-gray-200 transition hover:bg-gray-200"
                           >
                             📞 {res.phone || 'Без номера'}
                           </a>
@@ -142,7 +143,7 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
                       </div>
 
                       {res.comment && (
-                        <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 text-xs text-gray-700 leading-relaxed">
+                        <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 text-xs text-gray-700 leading-relaxed mt-2">
                           <span className="font-semibold text-gray-500 block mb-1">Комментарий мастера:</span>
                           {res.comment}
                         </div>
