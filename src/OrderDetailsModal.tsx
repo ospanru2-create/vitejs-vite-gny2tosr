@@ -13,6 +13,7 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
   const [showResponseForm, setShowResponseForm] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -57,7 +58,7 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
       <div className="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold"
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold z-10"
         >
           ✕
         </button>
@@ -84,6 +85,37 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
         <div className="text-2xl font-black text-blue-600 mb-4">
           {order.budget ? `${Number(order.budget).toLocaleString()} ₸` : 'Договорная'}
         </div>
+
+        {/* Галерея прикрепленных фото */}
+        {order.images && order.images.length > 0 && (
+          <div className="mb-6">
+            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Фотографии объекта</h4>
+            <div className="grid grid-cols-3 gap-2">
+              {order.images.map((imgUrl: string, index: number) => (
+                <img
+                  key={index}
+                  src={imgUrl}
+                  alt={`Фото ${index + 1}`}
+                  onClick={() => setSelectedImage(imgUrl)}
+                  className="w-full h-24 object-cover rounded-xl border border-gray-200 cursor-pointer hover:opacity-90 transition"
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Увеличенное фото по клику */}
+        {selectedImage && (
+          <div 
+            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 cursor-pointer"
+            onClick={() => setSelectedImage(null)}
+          >
+            <div className="relative max-w-3xl max-h-[90vh]">
+              <img src={selectedImage} alt="Увеличенное фото" className="max-w-full max-h-[85vh] rounded-xl object-contain" />
+              <p className="text-center text-white text-xs mt-2">Нажмите в любом месте, чтобы закрыть</p>
+            </div>
+          </div>
+        )}
 
         {/* Описание заказа */}
         <div className="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100">
