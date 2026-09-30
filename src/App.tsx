@@ -13,7 +13,8 @@ export default function App() {
   const [sortBy, setSortBy] = useState('newest'); // newest, price_desc, price_asc
   const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState<any>(null);
-  
+  const [totalResponsesCount, setTotalResponsesCount] = useState(0);
+
   // Модальные окна
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isMyOrdersOpen, setIsMyOrdersOpen] = useState(false);
@@ -32,6 +33,16 @@ export default function App() {
 
     if (!error && data) {
       setOrders(data);
+
+      // Считаем общее количество откликов по номеру телефона пользователя
+      const savedPhone = localStorage.getItem('user_phone');
+      if (savedPhone) {
+        const userOrders = data.filter((o: any) => o.phone === savedPhone.trim());
+        const responsesTotal = userOrders.reduce((sum: number, ord: any) => {
+          return sum + (ord.responses ? ord.responses.length : 0);
+        }, 0);
+        setTotalResponsesCount(responsesTotal);
+      }
     }
     setLoading(false);
   };
@@ -79,7 +90,6 @@ export default function App() {
     if (sortBy === 'price_asc') {
       return (Number(a.budget) || 0) - (Number(b.budget) || 0);
     }
-    // по умолчанию - сначала новые
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 
@@ -97,9 +107,14 @@ export default function App() {
             <div className="flex items-center gap-2 sm:gap-3">
               <button 
                 onClick={() => setIsMyOrdersOpen(true)}
-                className="text-xs sm:text-sm font-semibold text-gray-600 hover:text-blue-600 px-2.5 py-2 rounded-xl hover:bg-gray-100 transition"
+                className="relative text-xs sm:text-sm font-semibold text-gray-600 hover:text-blue-600 px-2.5 py-2 rounded-xl hover:bg-gray-100 transition flex items-center gap-1.5"
               >
                 Мои заказы
+                {totalResponsesCount > 0 && (
+                  <span className="bg-blue-600 text-white font-black text-[10px] px-1.5 py-0.5 rounded-full">
+                    {totalResponsesCount}
+                  </span>
+                )}
               </button>
 
               {user ? (
@@ -160,7 +175,6 @@ export default function App() {
           <div className="space-y-4 mb-8">
             <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
               <div className="flex flex-wrap gap-2 w-full sm:w-auto flex-1 max-w-xl">
-                {/* Выбор города */}
                 <select
                   value={selectedCity}
                   onChange={(e) => setSelectedCity(e.target.value)}
@@ -171,7 +185,6 @@ export default function App() {
                   ))}
                 </select>
 
-                {/* Сортировка */}
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
@@ -182,7 +195,6 @@ export default function App() {
                   <option value="price_asc">🏷️ Сначала дешевые</option>
                 </select>
 
-                {/* Поисковая строка */}
                 <div className="flex-1 min-w-[180px] relative">
                   <input 
                     type="text"
