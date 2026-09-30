@@ -87,7 +87,6 @@ export default function App() {
 
     return matchesCategory && matchesCity && matchesSearch && isActivelySearching;
   }).sort((a, b) => {
-    // Сначала закрепляем срочные (is_featured = true)
     if (a.is_featured && !b.is_featured) return -1;
     if (!a.is_featured && b.is_featured) return 1;
 
@@ -281,37 +280,37 @@ export default function App() {
                       key={ord.id}
                       className={`rounded-2xl p-5 transition flex flex-col justify-between ${
                         isFeatured 
-                          ? 'bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100/50 border-2 border-orange-500 shadow-lg relative overflow-hidden ring-2 ring-orange-200'
+                          ? 'bg-gradient-to-br from-amber-50/90 via-orange-50/70 to-amber-100/60 border-2 border-orange-500 shadow-md relative'
                           : 'bg-white border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200'
                       }`}
                     >
-                      {/* Яркий читаемый бейдж СРОЧНО */}
-                      {isFeatured && (
-                        <div className="absolute top-0 right-0 bg-gradient-to-r from-red-600 to-orange-500 text-white font-black text-[11px] uppercase px-3.5 py-1.5 rounded-bl-xl tracking-wider shadow-md flex items-center gap-1 z-10">
-                          🔥 <span>СРОЧНЫЙ ЗАКАЗ</span>
-                        </div>
-                      )}
-
                       <div>
-                        <div className="flex items-center justify-between mb-2 pr-28">
-                          <div className="flex items-center gap-2">
+                        {/* Верхняя панель: Метки + Дата */}
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {isFeatured && (
+                              <span className="bg-gradient-to-r from-red-600 to-orange-500 text-white font-black text-[10px] uppercase px-2.5 py-1 rounded-md tracking-wider shadow-sm flex items-center gap-1">
+                                🔥 СРОЧНО
+                              </span>
+                            )}
                             <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
                               isFeatured ? 'bg-orange-500 text-white' : 'text-blue-600 bg-blue-50'
                             }`}>
                               {ord.category || 'Общее'}
                             </span>
                             {ord.city && (
-                              <span className="text-xs text-gray-600 bg-white/80 border border-gray-200 px-2.5 py-1 rounded-lg font-medium">
+                              <span className="text-xs text-gray-700 bg-white/90 border border-gray-200 px-2 py-0.5 rounded-lg font-semibold">
                                 📍 {ord.city}
                               </span>
                             )}
                             {imagesCount > 0 && (
-                              <span className="text-xs text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
+                              <span className="text-xs text-amber-800 bg-amber-100/80 border border-amber-200 px-1.5 py-0.5 rounded-md font-bold flex items-center gap-1">
                                 📷 {imagesCount}
                               </span>
                             )}
                           </div>
-                          <span className="text-xs text-gray-400 font-medium">
+
+                          <span className="text-xs text-gray-500 font-semibold whitespace-nowrap">
                             {ord.created_at ? new Date(ord.created_at).toLocaleDateString('ru-RU') : ''}
                           </span>
                         </div>
