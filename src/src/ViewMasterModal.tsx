@@ -20,7 +20,6 @@ export default function ViewMasterModal({ isOpen, onClose, phone }: ViewMasterMo
 
   const loadMasterProfile = async () => {
     setLoading(true);
-    // Ищем профиль мастера по номеру телефона
     const { data } = await supabase
       .from('profiles')
       .select('*')
@@ -83,7 +82,6 @@ export default function ViewMasterModal({ isOpen, onClose, phone }: ViewMasterMo
           </div>
         ) : (
           <div className="overflow-y-auto pr-1 flex-1 space-y-4">
-            {/* Шапка профиля */}
             <div className="bg-blue-50/60 p-4 rounded-2xl border border-blue-100 flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-lg font-black text-gray-900">{profile.full_name || 'Мастер'}</h3>
@@ -105,7 +103,6 @@ export default function ViewMasterModal({ isOpen, onClose, phone }: ViewMasterMo
               </div>
             </div>
 
-            {/* Описание */}
             {profile.about && (
               <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">О мастере и услугах</h4>
@@ -115,7 +112,6 @@ export default function ViewMasterModal({ isOpen, onClose, phone }: ViewMasterMo
               </div>
             )}
 
-            {/* Портфолио работ */}
             {profile.portfolio_images && profile.portfolio_images.length > 0 && (
               <div>
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Портфолио выполненных работ</h4>
@@ -133,7 +129,6 @@ export default function ViewMasterModal({ isOpen, onClose, phone }: ViewMasterMo
               </div>
             )}
 
-            {/* Увеличенное фото */}
             {selectedImage && (
               <div 
                 className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 cursor-pointer"
@@ -146,7 +141,6 @@ export default function ViewMasterModal({ isOpen, onClose, phone }: ViewMasterMo
               </div>
             )}
 
-            {/* Кнопки связи */}
             <div className="flex gap-2 pt-2">
               {phoneDigits && (
                 <a 
