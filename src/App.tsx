@@ -273,6 +273,7 @@ export default function App() {
                 {filteredOrders.map((ord) => {
                   const responsesCount = ord.responses ? ord.responses.length : 0;
                   const imagesCount = ord.images ? ord.images.length : 0;
+                  const viewsCount = ord.views || 0;
                   const isFeatured = ord.is_featured;
 
                   return (
@@ -285,7 +286,7 @@ export default function App() {
                       }`}
                     >
                       <div>
-                        {/* Верхняя панель: Метки + Дата */}
+                        {/* Верхняя панель: Метки + Просмотры + Дата */}
                         <div className="flex items-center justify-between gap-2 mb-3">
                           <div className="flex flex-wrap items-center gap-1.5">
                             {isFeatured && (
@@ -310,9 +311,14 @@ export default function App() {
                             )}
                           </div>
 
-                          <span className="text-xs text-gray-500 font-semibold whitespace-nowrap">
-                            {ord.created_at ? new Date(ord.created_at).toLocaleDateString('ru-RU') : ''}
-                          </span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-[11px] text-gray-400 font-semibold bg-gray-100/80 px-2 py-0.5 rounded-md">
+                              👁️ {viewsCount}
+                            </span>
+                            <span className="text-xs text-gray-500 font-semibold whitespace-nowrap">
+                              {ord.created_at ? new Date(ord.created_at).toLocaleDateString('ru-RU') : ''}
+                            </span>
+                          </div>
                         </div>
 
                         <h3 className="text-lg font-bold text-gray-900 mb-1">{ord.title}</h3>
@@ -388,7 +394,10 @@ export default function App() {
       <OrderDetailsModal 
         isOpen={!!selectedOrder} 
         order={selectedOrder} 
-        onClose={() => setSelectedOrder(null)} 
+        onClose={() => {
+          setSelectedOrder(null);
+          fetchOrders(); // Обновляем список, чтобы сразу увидеть свежий просмотр
+        }} 
       />
 
       <MyOrdersModal 
