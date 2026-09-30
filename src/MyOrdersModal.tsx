@@ -71,6 +71,11 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
     }
   };
 
+  // Форматирование номера для WhatsApp
+  const cleanPhoneForWhatsapp = (p: string) => {
+    return p.replace(/[^0-9]/g, '');
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -84,10 +89,9 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
         </button>
 
         <h2 className="text-xl font-bold text-gray-900 mb-4">
-          {selectedOrderResponses ? 'Отклики на заказ' : 'Управление моими заказами'}
+          {selectedOrderResponses ? 'Отклики мастеров' : 'Управление моими заказами'}
         </h2>
 
-        {/* Экран просмотра откликов по конкретному заказу */}
         {selectedOrderResponses ? (
           <div>
             <button 
@@ -105,17 +109,27 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
             ) : (
               <div className="space-y-3">
                 {selectedOrderResponses.map((res) => (
-                  <div key={res.id} className="p-4 border border-gray-200 rounded-xl bg-gray-50/50 space-y-2">
+                  <div key={res.id} className="p-4 border border-gray-200 rounded-xl bg-gray-50/50 space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-base font-extrabold text-blue-600">
                         {res.price ? `${Number(res.price).toLocaleString()} ₸` : 'Договорная'}
                       </span>
-                      <a 
-                        href={`tel:${res.phone}`}
-                        className="text-xs bg-green-100 text-green-800 font-bold px-3 py-1.5 rounded-lg border border-green-300 hover:bg-green-200 transition"
-                      >
-                        📞 {res.phone}
-                      </a>
+                      <div className="flex items-center gap-2">
+                        <a 
+                          href={`https://wa.me/${cleanPhoneForWhatsapp(res.phone)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-lg hover:bg-emerald-600 transition flex items-center gap-1"
+                        >
+                          💬 WhatsApp
+                        </a>
+                        <a 
+                          href={`tel:${res.phone}`}
+                          className="text-xs bg-gray-100 text-gray-800 font-bold px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-200 transition"
+                        >
+                          📞 {res.phone}
+                        </a>
+                      </div>
                     </div>
                     {res.comment && (
                       <p className="text-xs text-gray-700 bg-white p-2.5 rounded-lg border border-gray-100">
@@ -129,7 +143,6 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
           </div>
         ) : (
           <>
-            {/* Поиск по номеру телефона */}
             <div className="flex gap-2 mb-6">
               <input 
                 type="tel"
@@ -147,7 +160,6 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
               </button>
             </div>
 
-            {/* Список найденных заказов */}
             {isSearched && (
               <div>
                 {orders.length === 0 ? (
@@ -162,10 +174,17 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
                         <div key={ord.id} className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm space-y-3">
                           <div className="flex justify-between items-start">
                             <div>
-                              <span className="text-xs text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded-md">
-                                {ord.category || 'Общее'}
-                              </span>
-                              <h3 className="font-bold text-gray-900 mt-1">{ord.title}</h3>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded-md">
+                                  {ord.category || 'Общее'}
+                                </span>
+                                {ord.city && (
+                                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md font-medium">
+                                    📍 {ord.city}
+                                  </span>
+                                )}
+                              </div>
+                              <h3 className="font-bold text-gray-900">{ord.title}</h3>
                             </div>
                             <span className="text-sm font-black text-blue-600">
                               {ord.budget ? `${Number(ord.budget).toLocaleString()} ₸` : 'Договорная'}
