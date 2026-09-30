@@ -281,58 +281,65 @@ export default function App() {
                       key={ord.id}
                       className={`rounded-2xl p-5 transition flex flex-col justify-between ${
                         isFeatured 
-                          ? 'bg-amber-50/70 border-2 border-amber-400 shadow-md relative overflow-hidden'
+                          ? 'bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100/50 border-2 border-orange-500 shadow-lg relative overflow-hidden ring-2 ring-orange-200'
                           : 'bg-white border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200'
                       }`}
                     >
+                      {/* Яркий читаемый бейдж СРОЧНО */}
                       {isFeatured && (
-                        <div className="absolute top-0 right-0 bg-amber-500 text-white font-black text-[10px] uppercase px-3 py-1 rounded-bl-xl tracking-wider shadow-sm">
-                          🔥 СРОЧНО / ПРЕМИУМ
+                        <div className="absolute top-0 right-0 bg-gradient-to-r from-red-600 to-orange-500 text-white font-black text-[11px] uppercase px-3.5 py-1.5 rounded-bl-xl tracking-wider shadow-md flex items-center gap-1 z-10">
+                          🔥 <span>СРОЧНЫЙ ЗАКАЗ</span>
                         </div>
                       )}
 
                       <div>
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-2 pr-28">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
+                            <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
+                              isFeatured ? 'bg-orange-500 text-white' : 'text-blue-600 bg-blue-50'
+                            }`}>
                               {ord.category || 'Общее'}
                             </span>
                             {ord.city && (
-                              <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg font-medium">
+                              <span className="text-xs text-gray-600 bg-white/80 border border-gray-200 px-2.5 py-1 rounded-lg font-medium">
                                 📍 {ord.city}
                               </span>
                             )}
                             {imagesCount > 0 && (
-                              <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
+                              <span className="text-xs text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
                                 📷 {imagesCount}
                               </span>
                             )}
                           </div>
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-gray-400 font-medium">
                             {ord.created_at ? new Date(ord.created_at).toLocaleDateString('ru-RU') : ''}
                           </span>
                         </div>
 
                         <h3 className="text-lg font-bold text-gray-900 mb-1">{ord.title}</h3>
-                        <p className="text-xs text-gray-500 line-clamp-2 mb-4 leading-relaxed">
+                        <p className="text-xs text-gray-600 line-clamp-2 mb-4 leading-relaxed font-medium">
                           {ord.description || 'Описание не указано'}
                         </p>
                       </div>
 
-                      <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-2">
-                        <div className="text-lg font-black text-blue-600">
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-200/80 mt-2">
+                        <div className="text-lg font-black text-blue-700">
                           {ord.budget ? `${Number(ord.budget).toLocaleString()} ₸` : 'Договорная'}
                         </div>
 
                         <div className="flex items-center gap-3">
                           {responsesCount > 0 && (
-                            <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
+                            <span className="text-xs font-semibold text-gray-600 bg-white border border-gray-200 px-2 py-1 rounded-md">
                               💬 {responsesCount}
                             </span>
                           )}
                           <button
                             onClick={() => setSelectedOrder(ord)}
-                            className="text-xs font-bold text-blue-600 hover:text-blue-800 transition"
+                            className={`text-xs font-bold transition px-3 py-1.5 rounded-xl ${
+                              isFeatured 
+                                ? 'bg-orange-600 text-white hover:bg-orange-700 shadow-sm'
+                                : 'text-blue-600 hover:text-blue-800'
+                            }`}
                           >
                             Подробнее →
                           </button>
