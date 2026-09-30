@@ -281,21 +281,21 @@ export default function App() {
                       key={ord.id}
                       className={`rounded-2xl p-5 transition flex flex-col justify-between ${
                         isFeatured 
-                          ? 'bg-gradient-to-br from-amber-50/90 via-orange-50/70 to-amber-100/60 border-2 border-orange-500 shadow-md relative'
+                          ? 'bg-gradient-to-br from-amber-50 via-orange-50/60 to-amber-100/50 border-2 border-orange-500 shadow-md relative'
                           : 'bg-white border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200'
                       }`}
                     >
                       <div>
-                        {/* Верхняя панель: Метки + Просмотры + Дата */}
+                        {/* Верхняя панель */}
                         <div className="flex items-center justify-between gap-2 mb-3">
                           <div className="flex flex-wrap items-center gap-1.5">
                             {isFeatured && (
-                              <span className="bg-gradient-to-r from-red-600 to-orange-500 text-white font-black text-[10px] uppercase px-2.5 py-1 rounded-md tracking-wider shadow-sm flex items-center gap-1">
+                              <span className="bg-gradient-to-r from-red-600 to-orange-500 text-white font-black text-[10px] uppercase px-2 py-0.5 rounded-md tracking-wider shadow-sm flex items-center gap-1 shrink-0">
                                 🔥 СРОЧНО
                               </span>
                             )}
                             <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
-                              isFeatured ? 'bg-orange-500 text-white' : 'text-blue-600 bg-blue-50'
+                              isFeatured ? 'bg-orange-100 text-orange-900 border border-orange-200' : 'text-blue-600 bg-blue-50'
                             }`}>
                               {ord.category || 'Общее'}
                             </span>
@@ -312,8 +312,8 @@ export default function App() {
                           </div>
 
                           <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-[11px] text-gray-400 font-semibold bg-gray-100/80 px-2 py-0.5 rounded-md">
-                              👁️ {viewsCount}
+                            <span className="text-[11px] text-gray-600 font-bold bg-white/80 border border-gray-200 px-2 py-0.5 rounded-md">
+                              👁️️ {viewsCount}
                             </span>
                             <span className="text-xs text-gray-500 font-semibold whitespace-nowrap">
                               {ord.created_at ? new Date(ord.created_at).toLocaleDateString('ru-RU') : ''}
@@ -340,10 +340,10 @@ export default function App() {
                           )}
                           <button
                             onClick={() => setSelectedOrder(ord)}
-                            className={`text-xs font-bold transition px-3 py-1.5 rounded-xl ${
+                            className={`text-xs font-bold transition px-3.5 py-2 rounded-xl shadow-sm ${
                               isFeatured 
-                                ? 'bg-orange-600 text-white hover:bg-orange-700 shadow-sm'
-                                : 'text-blue-600 hover:text-blue-800'
+                                ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white hover:from-orange-600 hover:to-red-700'
+                                : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
                             }`}
                           >
                             Подробнее →
@@ -396,7 +396,7 @@ export default function App() {
         order={selectedOrder} 
         onClose={() => {
           setSelectedOrder(null);
-          fetchOrders(); // Обновляем список, чтобы сразу увидеть свежий просмотр
+          fetchOrders();
         }} 
       />
 
