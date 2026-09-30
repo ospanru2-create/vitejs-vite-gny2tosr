@@ -8,6 +8,7 @@ interface OrderDetailsModalProps {
 }
 
 export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetailsModalProps) {
+  const [masterName, setMasterName] = useState('');
   const [price, setPrice] = useState('');
   const [phone, setPhone] = useState('');
   const [comment, setComment] = useState('');
@@ -18,9 +19,9 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
   useEffect(() => {
     if (isOpen) {
       const savedPhone = localStorage.getItem('user_phone');
-      if (savedPhone) {
-        setPhone(savedPhone);
-      }
+      const savedName = localStorage.getItem('master_name');
+      if (savedPhone) setPhone(savedPhone);
+      if (savedName) setMasterName(savedName);
     }
   }, [isOpen]);
 
@@ -33,6 +34,7 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
     const { error } = await supabase.from('responses').insert([
       {
         order_id: order.id,
+        master_name: masterName || 'Мастер',
         price: price ? Number(price) : null,
         phone,
         comment
@@ -45,6 +47,7 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
       alert('Ошибка при отправке отклика: ' + error.message);
     } else {
       localStorage.setItem('user_phone', phone);
+      if (masterName) localStorage.setItem('master_name', masterName);
       alert('Ваш отклик успешно отправлен заказчику!');
       setPrice('');
       setComment('');
@@ -86,7 +89,7 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
           {order.budget ? `${Number(order.budget).toLocaleString()} ₸` : 'Договорная'}
         </div>
 
-        {/* Галерея прикрепленных фото */}
+        {/* Галерея фото */}
         {order.images && order.images.length > 0 && (
           <div className="mb-6">
             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Фотографии объекта</h4>
@@ -104,7 +107,7 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
           </div>
         )}
 
-        {/* Увеличенное фото по клику */}
+        {/* Увеличенное фото */}
         {selectedImage && (
           <div 
             className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 cursor-pointer"
@@ -131,26 +134,40 @@ export default function OrderDetailsModal({ isOpen, order, onClose }: OrderDetai
             <h3 className="text-sm font-bold text-gray-900">Предложить свои услуги</h3>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Ваша цена (₸)</label>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Ваше имя или название компании *</label>
               <input 
-                type="number"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="Оставьте пустым, если согласны с бюджетом"
+                type="text"
+                required
+                value={masterName}
+                onChange={(e) => setMasterName(e.target.value)}
+                placeholder="Иван Петров / Бригада Строитель"
                 className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Ваш номер телефона *</label>
-              <input 
-                type="tel"
-                required
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+7 (707) 123-45-67"
-                className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Ваша цена (₸)</label>
+                <input 
+                  type="number"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  placeholder="Договорная"
+                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Ваш телефон *</label>
+                <input 
+                  type="tel"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+7 (707) 123-45-67"
+                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+                />
+              </div>
             </div>
 
             <div>

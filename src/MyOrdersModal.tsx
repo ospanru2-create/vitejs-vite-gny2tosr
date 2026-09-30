@@ -78,7 +78,6 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl w-full max-w-xl p-5 sm:p-6 shadow-2xl relative my-auto max-h-[85vh] flex flex-col">
         
-        {/* Кнопка закрытия */}
         <button 
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold z-10 p-1"
@@ -113,10 +112,15 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
                 {selectedOrderResponses.map((res) => {
                   const phoneDigits = cleanPhoneForWhatsapp(res.phone);
                   return (
-                    <div key={res.id} className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+                    <div key={res.id} className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
-                          <span className="text-xs text-gray-400 font-medium block">Предложенная цена</span>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-sm font-bold text-gray-900">
+                              👤 {res.master_name || 'Исполнитель'}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-400 font-medium">Предложенная цена:</div>
                           <span className="text-lg font-black text-blue-600">
                             {res.price ? `${Number(res.price).toLocaleString()} ₸` : 'Договорная'}
                           </span>
@@ -129,7 +133,7 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
                               target="_blank"
                               rel="noreferrer"
                               style={{ backgroundColor: '#25D366' }}
-                              className="text-xs text-white font-bold px-3 py-2 rounded-xl transition flex items-center gap-1 shadow-sm hover:opacity-90"
+                              className="text-xs text-white font-bold px-3.5 py-2 rounded-xl transition flex items-center gap-1 shadow-sm hover:opacity-90"
                             >
                               WhatsApp
                             </a>
@@ -144,7 +148,7 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
                       </div>
 
                       {res.comment && (
-                        <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 text-xs text-gray-700 leading-relaxed mt-2">
+                        <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 text-xs text-gray-700 leading-relaxed">
                           <span className="font-semibold text-gray-500 block mb-1">Комментарий мастера:</span>
                           {res.comment}
                         </div>
@@ -157,7 +161,6 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
           </div>
         ) : (
           <div className="flex flex-col flex-1 min-h-0">
-            {/* Поиск по номеру */}
             <div className="flex gap-2 mb-4 shrink-0">
               <input 
                 type="tel"
@@ -175,7 +178,6 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
               </button>
             </div>
 
-            {/* Прокручиваемый список заказов */}
             {isSearched && (
               <div className="overflow-y-auto pr-1 flex-1">
                 {orders.length === 0 ? (
