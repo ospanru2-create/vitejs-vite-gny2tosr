@@ -87,6 +87,10 @@ export default function App() {
 
     return matchesCategory && matchesCity && matchesSearch && isActivelySearching;
   }).sort((a, b) => {
+    // Сначала закрепляем срочные (is_featured = true)
+    if (a.is_featured && !b.is_featured) return -1;
+    if (!a.is_featured && b.is_featured) return 1;
+
     if (sortBy === 'price_desc') {
       return (Number(b.budget) || 0) - (Number(a.budget) || 0);
     }
@@ -270,12 +274,23 @@ export default function App() {
                 {filteredOrders.map((ord) => {
                   const responsesCount = ord.responses ? ord.responses.length : 0;
                   const imagesCount = ord.images ? ord.images.length : 0;
+                  const isFeatured = ord.is_featured;
 
                   return (
                     <div 
                       key={ord.id}
-                      className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-blue-200 transition flex flex-col justify-between"
+                      className={`rounded-2xl p-5 transition flex flex-col justify-between ${
+                        isFeatured 
+                          ? 'bg-amber-50/70 border-2 border-amber-400 shadow-md relative overflow-hidden'
+                          : 'bg-white border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200'
+                      }`}
                     >
+                      {isFeatured && (
+                        <div className="absolute top-0 right-0 bg-amber-500 text-white font-black text-[10px] uppercase px-3 py-1 rounded-bl-xl tracking-wider shadow-sm">
+                          🔥 СРОЧНО / ПРЕМИУМ
+                        </div>
+                      )}
+
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">

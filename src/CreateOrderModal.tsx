@@ -7,7 +7,6 @@ interface CreateOrderModalProps {
   onOrderCreated: () => void;
 }
 
-// Данные Telegram-бота
 const TELEGRAM_BOT_TOKEN = '8458804133:AAF8BpkddexwjzopM0n-eWb4kLvhVD-aObc';
 const TELEGRAM_CHAT_ID = '8781696457';
 
@@ -18,6 +17,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
   const [budget, setBudget] = useState('');
   const [phone, setPhone] = useState('');
   const [description, setDescription] = useState('');
+  const [isFeatured, setIsFeatured] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -37,10 +37,10 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
     }
   };
 
-  const sendTelegramNotification = async (orderTitle: string, orderCat: string, orderCity: string, orderBudget: string, orderPhone: string, orderDesc: string) => {
+  const sendTelegramNotification = async (orderTitle: string, orderCat: string, orderCity: string, orderBudget: string, orderPhone: string, orderDesc: string, featured: boolean) => {
     if (!TELEGRAM_BOT_TOKEN) return;
 
-    const message = `🚨 <b>НОВЫЙ ЗАКАЗ на uslugikz.asia</b>\n\n` +
+    const message = `${featured ? '🔥 <b>СРОЧНЫЙ ПРЕМИУМ ЗАКАЗ!</b>' : '🚨 <b>НОВЫЙ ЗАКАЗ на uslugikz.asia</b>'}\n\n` +
       `📌 <b>Заголовок:</b> ${orderTitle}\n` +
       `📂 <b>Категория:</b> ${orderCat}\n` +
       `📍 <b>Город:</b> ${orderCity}\n` +
@@ -98,6 +98,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
         phone,
         description,
         images: imageUrls,
+        is_featured: isFeatured,
         status: 'open'
       }
     ]);
@@ -108,14 +109,13 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
       alert('Ошибка при создании заказа: ' + error.message);
     } else {
       localStorage.setItem('user_phone', phone);
-      
-      // Мгновенная отправка сообщения в Telegram
-      sendTelegramNotification(title, category, city, budget, phone, description);
+      sendTelegramNotification(title, category, city, budget, phone, description, isFeatured);
 
       alert('Заказ успешно создан!');
       setTitle('');
       setBudget('');
       setDescription('');
+      setIsFeatured(false);
       setFiles([]);
       onOrderCreated();
       onClose();
@@ -217,6 +217,20 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Укажите подробности, ориентиры или требования..."
               className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
+
+          {/* Галочка Срочный / Премиум */}
+          <div className="bg-amber-50 p-3.5 rounded-xl border border-amber-200 flex items-center justify-between">
+            <div>
+              <span className="text-xs font-bold text-amber-900 block">🔥 Выделить как СРОЧНЫЙ / ПРЕМИУМ</span>
+              <span className="text-[11px] text-amber-700 block">Заказ подсветится жёлтым и будет закреплен наверху</span>
+            </div>
+            <input 
+              type="checkbox"
+              checked={isFeatured}
+              onChange={(e) => setIsFeatured(e.target.checked)}
+              className="w-5 h-5 text-amber-600 rounded focus:ring-amber-500 cursor-pointer"
             />
           </div>
 
