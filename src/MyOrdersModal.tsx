@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
+import ViewMasterModal from './ViewMasterModal';
 
 interface MyOrdersModalProps {
   isOpen: boolean;
@@ -13,6 +14,9 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
   const [loading, setLoading] = useState(false);
   const [selectedOrderResponses, setSelectedOrderResponses] = useState<any[] | null>(null);
   const [activeOrderTitle, setActiveOrderTitle] = useState('');
+  
+  // Для просмотра профиля мастера
+  const [selectedMasterPhone, setSelectedMasterPhone] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -115,10 +119,16 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
                     <div key={res.id} className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm space-y-3">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
-                          <div className="flex items-center gap-2 mb-0.5">
+                          <div className="flex items-center gap-2 mb-1">
                             <span className="text-sm font-bold text-gray-900">
                               👤 {res.master_name || 'Исполнитель'}
                             </span>
+                            <button
+                              onClick={() => setSelectedMasterPhone(res.phone)}
+                              className="text-[11px] font-bold text-blue-600 hover:text-blue-800 underline bg-blue-50 px-2 py-0.5 rounded-md"
+                            >
+                              Профиль / Портфолио
+                            </button>
                           </div>
                           <div className="text-xs text-gray-400 font-medium">Предложенная цена:</div>
                           <span className="text-lg font-black text-blue-600">
@@ -248,6 +258,13 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
             )}
           </div>
         )}
+
+        {/* Просмотр портфолио мастера */}
+        <ViewMasterModal 
+          isOpen={!!selectedMasterPhone}
+          onClose={() => setSelectedMasterPhone(null)}
+          phone={selectedMasterPhone || ''}
+        />
       </div>
     </div>
   );
