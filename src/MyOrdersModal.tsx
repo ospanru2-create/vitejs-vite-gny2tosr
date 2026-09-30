@@ -108,44 +108,48 @@ export default function MyOrdersModal({ isOpen, onClose }: MyOrdersModalProps) {
               </div>
             ) : (
               <div className="space-y-3">
-                {selectedOrderResponses.map((res) => (
-                  <div key={res.id} className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm space-y-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <span className="text-xs text-gray-400 font-medium block mb-0.5">Предложенная цена</span>
-                        <span className="text-lg font-black text-blue-600">
-                          {res.price ? `${Number(res.price).toLocaleString()} ₸` : 'Договорная'}
-                        </span>
-                      </div>
+                {selectedOrderResponses.map((res) => {
+                  const phoneDigits = cleanPhoneForWhatsapp(res.phone);
+                  return (
+                    <div key={res.id} className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <span className="text-xs text-gray-400 font-medium block">Предложенная цена</span>
+                          <span className="text-lg font-black text-blue-600">
+                            {res.price ? `${Number(res.price).toLocaleString()} ₸` : 'Договорная'}
+                          </span>
+                        </div>
 
-                      <div className="flex items-center gap-2">
-                        {res.phone && (
+                        {/* Кнопки WhatsApp и Позвонить */}
+                        <div className="flex items-center gap-2">
+                          {phoneDigits && (
+                            <a 
+                              href={`https://wa.me/${phoneDigits}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-xl transition flex items-center gap-1 shadow-sm"
+                            >
+                              WhatsApp
+                            </a>
+                          )}
                           <a 
-                            href={`https://wa.me/${cleanPhoneForWhatsapp(res.phone)}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-xs bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-3 py-2 rounded-xl transition flex items-center gap-1 shadow-sm"
+                            href={`tel:${res.phone}`}
+                            className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold px-3 py-2 rounded-xl border border-gray-200 transition"
                           >
-                            💬 WhatsApp
+                            📞 {res.phone || 'Без номера'}
                           </a>
-                        )}
-                        <a 
-                          href={`tel:${res.phone}`}
-                          className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold px-3 py-2 rounded-xl border border-gray-200 transition"
-                        >
-                          📞 {res.phone || 'Без номера'}
-                        </a>
+                        </div>
                       </div>
-                    </div>
 
-                    {res.comment && (
-                      <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 text-xs text-gray-700 leading-relaxed">
-                        <span className="font-semibold text-gray-500 block mb-1">Комментарий мастера:</span>
-                        {res.comment}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      {res.comment && (
+                        <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 text-xs text-gray-700 leading-relaxed">
+                          <span className="font-semibold text-gray-500 block mb-1">Комментарий мастера:</span>
+                          {res.comment}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
