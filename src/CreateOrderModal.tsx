@@ -7,6 +7,10 @@ interface CreateOrderModalProps {
   onOrderCreated: () => void;
 }
 
+// Данные Telegram-бота
+const TELEGRAM_BOT_TOKEN = '8458804133:AAF8BpkddexwjzopM0n-eWb4kLvhVD-aObc';
+const TELEGRAM_CHAT_ID = '8781696457';
+
 export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: CreateOrderModalProps) {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Ремонт и отделка');
@@ -28,8 +32,35 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const selectedFiles = Array.from(e.target.files).slice(0, 3); // Максимум 3 фото
+      const selectedFiles = Array.from(e.target.files).slice(0, 3);
       setFiles(selectedFiles);
+    }
+  };
+
+  const sendTelegramNotification = async (orderTitle: string, orderCat: string, orderCity: string, orderBudget: string, orderPhone: string, orderDesc: string) => {
+    if (!TELEGRAM_BOT_TOKEN) return;
+
+    const message = `🚨 <b>НОВЫЙ ЗАКАЗ на uslugikz.asia</b>\n\n` +
+      `📌 <b>Заголовок:</b> ${orderTitle}\n` +
+      `📂 <b>Категория:</b> ${orderCat}\n` +
+      `📍 <b>Город:</b> ${orderCity}\n` +
+      `💰 <b>Бюджет:</b> ${orderBudget ? `${orderBudget} ₸` : 'Договорная'}\n` +
+      `📞 <b>Телефон:</b> ${orderPhone}\n` +
+      `📝 <b>Описание:</b> ${orderDesc || 'Не указано'}\n\n` +
+      `🔗 <a href="https://uslugikz.asia/">Перейти к заказу на сайте</a>`;
+
+    try {
+      await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text: message,
+          parse_mode: 'HTML'
+        })
+      });
+    } catch (err) {
+      console.error('Ошибка отправки в Telegram:', err);
     }
   };
 
@@ -39,7 +70,6 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
 
     const imageUrls: string[] = [];
 
-    // Загрузка изображений в Supabase Storage
     for (const file of files) {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
@@ -59,7 +89,6 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
       }
     }
 
-    // Сохранение заказа в базу
     const { error } = await supabase.from('orders').insert([
       {
         title,
@@ -79,6 +108,10 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
       alert('Ошибка при создании заказа: ' + error.message);
     } else {
       localStorage.setItem('user_phone', phone);
+      
+      // Мгновенная отправка сообщения в Telegram
+      sendTelegramNotification(title, category, city, budget, phone, description);
+
       alert('Заказ успешно создан!');
       setTitle('');
       setBudget('');
@@ -90,18 +123,18 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderCreated }: Cr
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-2xl relative my-auto max-h-[85vh] flex flex-col">
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold"
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold z-10 p-1"
         >
           ✕
         </button>
 
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Создать новый заказ</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-4 shrink-0">Создать новый заказ</h2>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="overflow-y-auto pr-1 flex-1 space-y-4">
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">Что нужно сделать? *</label>
             <input 
