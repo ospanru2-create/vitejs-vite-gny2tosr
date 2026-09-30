@@ -4,13 +4,14 @@ import CreateOrderModal from './CreateOrderModal';
 import OrderDetailsModal from './OrderDetailsModal';
 import MyOrdersModal from './MyOrdersModal';
 import AuthModal from './AuthModal';
+import ProfileModal from './ProfileModal';
 
 export default function App() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('Все');
   const [selectedCity, setSelectedCity] = useState('Все города');
-  const [sortBy, setSortBy] = useState('newest'); // newest, price_desc, price_asc
+  const [sortBy, setSortBy] = useState('newest');
   const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState<any>(null);
   const [totalResponsesCount, setTotalResponsesCount] = useState(0);
@@ -19,6 +20,7 @@ export default function App() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isMyOrdersOpen, setIsMyOrdersOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
   const categories = ['Все', 'Ремонт и отделка', 'Сантехника', 'Электрика', 'Клининг', 'Перевозки'];
@@ -34,7 +36,6 @@ export default function App() {
     if (!error && data) {
       setOrders(data);
 
-      // Считаем общее количество откликов по номеру телефона пользователя
       const savedPhone = localStorage.getItem('user_phone');
       if (savedPhone) {
         const userOrders = data.filter((o: any) => o.phone === savedPhone.trim());
@@ -119,9 +120,12 @@ export default function App() {
 
               {user ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-gray-700 bg-gray-100 px-3 py-2 rounded-xl">
+                  <button
+                    onClick={() => setIsProfileOpen(true)}
+                    className="text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-xl transition flex items-center gap-1"
+                  >
                     👤 {user.user_metadata?.full_name || user.email?.split('@')[0]}
-                  </span>
+                  </button>
                   <button
                     onClick={handleSignOut}
                     className="text-xs font-semibold text-red-500 hover:text-red-700 px-2 py-2 hover:bg-red-50 rounded-xl transition"
@@ -173,12 +177,12 @@ export default function App() {
           
           {/* Фильтры и Поиск */}
           <div className="space-y-4 mb-8">
-            <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-              <div className="flex flex-wrap gap-2 w-full sm:w-auto flex-1 max-w-xl">
+            <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 flex-1">
                 <select
                   value={selectedCity}
                   onChange={(e) => setSelectedCity(e.target.value)}
-                  className="border border-gray-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold text-gray-700 bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold text-gray-700 bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                 >
                   {cities.map((c) => (
                     <option key={c} value={c}>{c === 'Все города' ? '📍 Все города' : `📍 ${c}`}</option>
@@ -188,20 +192,20 @@ export default function App() {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="border border-gray-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold text-gray-700 bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold text-gray-700 bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                 >
                   <option value="newest">🕒 Сначала новые</option>
                   <option value="price_desc">💎 Сначала дорогие</option>
                   <option value="price_asc">🏷️ Сначала дешевые</option>
                 </select>
 
-                <div className="flex-1 min-w-[180px] relative">
+                <div className="relative w-full">
                   <input 
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Поиск по заказам..."
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white shadow-sm"
+                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white shadow-sm"
                   />
                   {searchQuery && (
                     <button 
@@ -214,13 +218,12 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="text-xs text-gray-500 font-semibold">
+              <div className="text-xs text-gray-500 font-semibold self-end md:self-center">
                 Найдено заказов: <span className="text-blue-600 font-bold">{filteredOrders.length}</span>
               </div>
             </div>
 
-            {/* Категории */}
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+            <div className="flex gap-2 overflow-x-auto pb-2 pt-1 scrollbar-none">
               {categories.map((cat) => (
                 <button
                   key={cat}
@@ -360,6 +363,12 @@ export default function App() {
       <AuthModal 
         isOpen={isAuthOpen} 
         onClose={() => setIsAuthOpen(false)} 
+      />
+
+      <ProfileModal 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+        user={user}
       />
     </div>
   );
